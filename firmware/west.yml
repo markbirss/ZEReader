@@ -1,0 +1,30 @@
+
+manifest:
+  defaults:
+    remote: zephyrproject
+    revision: main
+
+  remotes:
+    - name: zephyrproject
+      url-base: https://github.com/zephyrproject-rtos
+
+
+  projects:
+    - name: zephyr
+      path: zephyr
+      remote: zephyrproject
+
+      import:
+        name-allowlist:
+          - cmsis
+          - fatfs
+          - hal_nordic
+          - hal_rpi_pico
+          - hal_stm32
+          - hal_littlefs
+          - lvgl
+          - mcuboot
+          - segger
+
+  self:
+    west-commands: scripts/west-commands.yml

@@ -1,0 +1,12 @@
+build
+build*
+
+/.west
+/bootloader
+/modules
+/tools
+/zephyr
+__pycache__
+/nrf
+/nrfxlib
+/test
