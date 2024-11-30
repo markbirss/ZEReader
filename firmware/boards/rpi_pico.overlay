@@ -1,0 +1,70 @@
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+
+/ {
+
+  chosen {
+    zephyr,display = &uc8179_waveshare_epaper_gdew075t7;
+  };
+
+  mipi_dbi_waveshare_epaper_gdew075t7 {
+    compatible = "zephyr,mipi-dbi-spi";
+    spi-dev = <&spi0>; //spi@0 -> GPIO 16-19
+    dc-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+    reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+    write-only;
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+    uc8179_waveshare_epaper_gdew075t7: uc8179@0 {
+      compatible = "gooddisplay,gdew075t7", "ultrachip,uc8179";
+      mipi-max-frequency = <4000000>;
+      reg = <0>;
+      width = <800>;
+      height = <480>;
+      busy-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+
+      softstart = [ 17 17 17 17  ];
+
+      full {
+        pwr = [ 07 07 3f 3f  ];
+        cdi = <07>;
+        tcon = <0x22>;
+      };
+    };
+  };
+
+  lvgl_pointer_input: lvgl_pointer {
+    compatible = "zephyr,lvgl-button-input";
+    input = <&buttons>;
+    input-codes = <INPUT_KEY_0 INPUT_KEY_1>;
+    coordinates = <700 60>, <700 180>;
+  };
+
+  buttons: buttons {
+    compatible = "gpio-keys";
+    polling-mode; // Use polling, as none polling generates at boot buttons releases for each button. Which is not desired. Maybe a bug in Zephyr?
+
+    key1: key1 {
+      label = "button1";
+      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      zephyr,code = <INPUT_KEY_1>;
+    };
+    key2: key2 {
+      label = "button2";
+      gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+      zephyr,code = <INPUT_KEY_2>;
+    };
+    // key3: key3 {
+      //     label = "button3";
+      //     gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      //     zephyr,code = <INPUT_KEY_3>;
+    // };
+    // key4: key4 {
+      //     label = "button4";
+      //     gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+      //     zephyr,code = <INPUT_KEY_4>;
+    // };
+  };
+};
