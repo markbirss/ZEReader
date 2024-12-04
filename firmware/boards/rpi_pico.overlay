@@ -39,7 +39,7 @@
     compatible = "zephyr,lvgl-button-input";
     input = <&buttons>;
     input-codes = <INPUT_KEY_0 INPUT_KEY_1>;
-    coordinates = <700 60>, <700 180>;
+    coordinates = <240 400>, <440 180>;
   };
 
   buttons: buttons {
@@ -48,7 +48,7 @@
 
     key1: key1 {
       label = "button1";
-      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
       zephyr,code = <INPUT_KEY_1>;
     };
     key2: key2 {
