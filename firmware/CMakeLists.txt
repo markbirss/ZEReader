@@ -4,9 +4,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ZEReader)
 
 # add_subdirectory(src/epub)
-# add_subdirectory(src/ui)
+add_subdirectory(src/ui)
 
 add_compile_definitions(LV_LVGL_H_INCLUDE_SIMPLE)
 
-#FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE src/main.c)
