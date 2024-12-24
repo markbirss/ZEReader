@@ -6,7 +6,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/kernel.h>
 
-#include "ui/ui.h"
+#include <ui/ui.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_DISPLAY_LOG_LEVEL);
 

@@ -1,0 +1,4 @@
+config EPUB
+    bool "Support for ZEReader ePub lib"
+    help
+        This option enables the ePub lib

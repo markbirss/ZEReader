@@ -1,5 +1,6 @@
 
 manifest:
+  version: "1.0"
   defaults:
     remote: zephyrproject
     revision: main
@@ -11,7 +12,7 @@ manifest:
 
   projects:
     - name: zephyr
-      path: zephyr
+      path: zephyr-rtos
       remote: zephyrproject
 
       import:

@@ -1,8 +1,17 @@
 #include <zephyr/logging/log.h>
 
-#include "ui.h"
+#include <ui/ui.h>
 
 LOG_MODULE_REGISTER(ui);
+
+
+lv_obj_t *button_left;
+lv_obj_t *button_mid;
+lv_obj_t *button_right;
+
+lv_obj_t *button_left_label;
+lv_obj_t *button_mid_label;
+lv_obj_t *button_right_label;
 
 
 static void button_left_clicked_cb(lv_event_t *e)
