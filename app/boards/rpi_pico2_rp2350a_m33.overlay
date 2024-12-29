@@ -1,6 +1,9 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/lvgl/lvgl.h>
 
+&spi0 {
+  status = "okay";
+};
 
 / {
 
