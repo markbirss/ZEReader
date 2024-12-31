@@ -10,7 +10,6 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_DISPLAY_LOG_LEVEL);
 
-
 /*
 This can be used to access the GPIO Buttons directly.
 If used together with the LVGL input device, there is some
@@ -34,13 +33,11 @@ So better just use one mechanism!
 // 	// count = 0;
 // }
 
-
-
 int main(void)
 {
 	LOG_DBG("Hello World - ZEReader! %s\n", CONFIG_BOARD_TARGET);
 
-	context_t context = BOOK_MENU;
+	context_t context = MENU;
 
 	// Initialize the choosen zephyr,display device
 	// -> Make the device tree description available for the software part
@@ -96,14 +93,16 @@ int main(void)
 
 	// lv_disp_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
 
-	zereader_setup_contol_buttons(&context);
+	zereader_setup_control_buttons(&context);
+	zereader_setup_page();
 
 	lv_task_handler();
 	display_blanking_off(display_dev);
 
 	lv_task_handler();
 
-	while (1) {
+	while (1)
+	{
 		// if ((count % 100) == 0U) {
 		// 	sprintf(count_str, "Hello %d", count/100U);
 		// 	lv_label_set_text(hello_world_label, count_str);

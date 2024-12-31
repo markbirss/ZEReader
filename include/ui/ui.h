@@ -13,5 +13,8 @@ extern lv_obj_t *button_left_label;
 extern lv_obj_t *button_mid_label;
 extern lv_obj_t *button_right_label;
 
+void zereader_setup_control_buttons(context_t *context);
+void zereader_setup_page();
 
-void zereader_setup_contol_buttons(context_t *context);
+void zereader_print_page();
+void zereader_clean_page();
