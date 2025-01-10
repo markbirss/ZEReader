@@ -8,7 +8,10 @@
 
 #include <ui/ui.h>
 
-LOG_MODULE_REGISTER(main, CONFIG_DISPLAY_LOG_LEVEL);
+#include "epub/epub.h"
+
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+
 
 /*
 This can be used to access the GPIO Buttons directly.
@@ -32,6 +35,7 @@ So better just use one mechanism!
 // 	LOG_DBG("GPIO button clicked");
 // 	// count = 0;
 // }
+
 
 int main(void)
 {
@@ -91,24 +95,31 @@ int main(void)
 	// 	}
 	// }
 
-	// lv_disp_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
+	// lv_display_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
 
-	zereader_setup_control_buttons(&context);
-	zereader_setup_page();
 
-	lv_task_handler();
-	display_blanking_off(display_dev);
+/*
+	Commented out because LVGL seems to be broken right now
+ */
+	// zereader_setup_page();
+	// zereader_setup_control_buttons(&context);
 
-	lv_task_handler();
+/*
+	Commented out because LVGL seems to be broken right now
+ */
 
-	while (1)
-	{
-		// if ((count % 100) == 0U) {
-		// 	sprintf(count_str, "Hello %d", count/100U);
-		// 	lv_label_set_text(hello_world_label, count_str);
-		// }
-		lv_task_handler();
-		// ++count;
-		k_sleep(K_MSEC(10));
-	}
+	epub_init_sd_card();
+	epub_get_entry_points();
+
+
+	// display_blanking_off(display_dev);
+	// lv_timer_handler();
+
+	// while (1) {
+	// 	uint32_t sleep_ms = lv_timer_handler();
+
+	// 	k_msleep(MIN(sleep_ms, INT32_MAX));
+	// }
+
+	return 0;
 }
