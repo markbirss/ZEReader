@@ -1,9 +1,6 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/lvgl/lvgl.h>
 
-&spi0 {
-  status = "okay";
-};
 
 / {
 
@@ -41,7 +38,7 @@
   keys: keys {
     compatible = "gpio-keys";
     button0: button0 {
-      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
       zephyr,code = <INPUT_KEY_0>;
     };
 
@@ -51,15 +48,67 @@
     };
 
     button2: button2 {
-      gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
       zephyr,code = <INPUT_KEY_2>;
+    };
+
+    button3: button3 {
+      gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+      zephyr,code = <INPUT_KEY_3>;
     };
   };
 
   lvgl_button_input: lvgl_button_input {
     compatible = "zephyr,lvgl-button-input";
     input = <&keys>;
-    input-codes = <INPUT_KEY_0 INPUT_KEY_1 INPUT_KEY_2>;
-    coordinates = <10 470>, <400 470>, <780 470>;
+    input-codes = <INPUT_KEY_0 INPUT_KEY_1 INPUT_KEY_2 INPUT_KEY_3>;
+    coordinates = <10 470>, <400 470>, <780 470>, <15 470>;
   };
+};
+
+&spi0 {
+  status = "okay";
+};
+
+// Pinmux defines:
+// https://docs.zephyrproject.org/apidoc/latest/rpi-pico-pinctrl-common_8h_source.html
+&pinctrl {
+  spi1_default: spi1_default {
+    group1 {
+      pinmux = <SPI1_CSN_P13>, <SPI1_SCK_P10>, <SPI1_TX_P11>;
+    };
+    group2 {
+      pinmux = <SPI1_RX_P12>;
+      input-enable;
+    };
+  };
+};
+
+&spi1 {
+  clock-frequency = <DT_FREQ_M(8)>;
+  status = "okay";
+  pinctrl-0 = <&spi1_default>;
+  pinctrl-names = "default";
+
+  cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+
+  sdhc0: sdhc@0 {
+    compatible = "zephyr,sdhc-spi-slot";
+    reg = <0>;
+    status = "okay";
+    mmc {
+      compatible = "zephyr,sdmmc-disk";
+      disk-name = "SD";
+      status = "okay";
+    };
+    spi-max-frequency = <20000000>;
+  };
+};
+
+&i2c0 {
+  status = "disabled";
+};
+
+&i2c1 {
+  status = "disabled";
 };

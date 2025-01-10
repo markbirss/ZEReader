@@ -38,7 +38,7 @@
   keys: keys {
     compatible = "gpio-keys";
     button0: button0 {
-      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
       zephyr,code = <INPUT_KEY_0>;
     };
 
@@ -48,54 +48,30 @@
     };
 
     button2: button2 {
-      gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+      gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
       zephyr,code = <INPUT_KEY_2>;
+    };
+
+    button3: button3 {
+      gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+      zephyr,code = <INPUT_KEY_3>;
     };
   };
 
   lvgl_button_input: lvgl_button_input {
     compatible = "zephyr,lvgl-button-input";
     input = <&keys>;
-    input-codes = <INPUT_KEY_0 INPUT_KEY_1 INPUT_KEY_2>;
-    coordinates = <10 470>, <400 470>, <780 470>;
+    input-codes = <INPUT_KEY_0 INPUT_KEY_1 INPUT_KEY_2 INPUT_KEY_3>;
+    coordinates = <10 470>, <400 470>, <780 470>, <15 470>;
   };
 };
-
-// spi1: spi@40040000 {
-//   compatible = "raspberrypi,pico-spi", "arm,pl022";
-//   #address-cells = <1>;
-//   #size-cells = <0>;
-//   reg = <0x40040000 DT_SIZE_K(4)>;
-//   resets = <&reset RPI_PICO_RESETS_RESET_SPI1>;
-//   clocks = <&clocks RPI_PICO_CLKID_CLK_PERI>;
-//   interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-//   interrupt-names = "spi1";
-//   status = "disabled";
-// };
-
-// spi0_default: spi0_default {
-//   group1 {
-//     pinmux = <SPI0_CSN_P17>, <SPI0_SCK_P18>, <SPI0_TX_P19>;
-//   };
-//   group2 {
-//     pinmux = <SPI0_RX_P16>;
-//     input-enable;
-//   };
-// };
-
-// &spi0 {
-// 	clock-frequency = <DT_FREQ_M(8)>;
-// 	status = "okay";
-// 	pinctrl-0 = <&spi0_default>;
-// 	pinctrl-names = "default";
-// };
 
 // Pinmux defines:
 // https://docs.zephyrproject.org/apidoc/latest/rpi-pico-pinctrl-common_8h_source.html
 &pinctrl {
   spi1_default: spi1_default {
     group1 {
-      pinmux = <SPI1_CSN_P13>, <SPI1_SCK_P14>, <SPI1_TX_P15>;
+      pinmux = <SPI1_CSN_P13>, <SPI1_SCK_P10>, <SPI1_TX_P11>;
     };
     group2 {
       pinmux = <SPI1_RX_P12>;
@@ -110,7 +86,7 @@
   pinctrl-0 = <&spi1_default>;
   pinctrl-names = "default";
 
-  cs-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+  cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 
   sdhc0: sdhc@0 {
     compatible = "zephyr,sdhc-spi-slot";
@@ -123,4 +99,12 @@
     };
     spi-max-frequency = <20000000>;
   };
+};
+
+&i2c0 {
+  status = "disabled";
+};
+
+&i2c1 {
+  status = "disabled";
 };
