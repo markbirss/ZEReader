@@ -6,24 +6,29 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(epub, LOG_LEVEL_DBG);
 
-#define EPUB_MAX_LEVEL_CONTENT 1000
-#define EPUB_FILE_NUM_MAX 10
+#define EPUB_FILE_NUM_MAX 6
 #define EPUB_FILE_LEN_MAX 100
-#define EPUB_TITLE_AUTHOR_LEN_MAX 20
+#define EPUB_TITLE_AUTHOR_LEN_MAX 50
+#define EPUB_PAGE_SIZE 1500
 
 static char epub_entry_points[EPUB_FILE_NUM_MAX][EPUB_FILE_LEN_MAX];
-// static char epub_titles[EPUB_FILE_NUM_MAX][EPUB_TITLE_AUTHOR_LEN_MAX];
-// static char epub_authors[EPUB_FILE_NUM_MAX][EPUB_TITLE_AUTHOR_LEN_MAX];
+static char epub_titles[EPUB_FILE_NUM_MAX][EPUB_TITLE_AUTHOR_LEN_MAX];
+static char epub_authors[EPUB_FILE_NUM_MAX][EPUB_TITLE_AUTHOR_LEN_MAX];
+static char epub_page[EPUB_PAGE_SIZE];
 static uint16_t found_books = 0;
 
-int epub_init_sd_card()
+// char current_filename[EPUB_FILE_LEN_MAX];
+char current_filename[] = "Flavia8/OEBPS/Text/888D32CF4BFE4F5EAE6F8878B948DD18.xhtml";
+size_t current_file_offset = 0;
+
+int epub_initialize()
 {
     return sd_card_init();
 }
 
 // This implementation is a first compromise in terms of time, effort and memory/search time optimization.
-// Usually, the starting point (rootfile) of an ePub is called content.opf and located in the OEBPS directory.
-// Both, the file name and the location are not required, but commonly used.
+// Usually, the starting point (rootfile) of an ePub is called content.opf and located in the OEBPS
+// directory. Both, the file name and the location are not required, but commonly used.
 // In this case, the file can not be found with the current approach.
 // The most correct approach would be searching for META-INF/container.xml which must be present to
 // fulfill the ePub standard.
@@ -44,16 +49,14 @@ int epub_get_entry_points()
     char assumed_location[] = "/OEBPS/content.opf\0";
     uint16_t top_level_path_size = EPUB_FILE_LEN_MAX - strlen(assumed_location);
 
-    size_t max_level_content_size = EPUB_MAX_LEVEL_CONTENT;
-    char top_level_content[max_level_content_size];
-    ret = sd_card_list_files(NULL, top_level_content, &max_level_content_size, true);
+    size_t max_ls_content_size = 1000;
+    char top_level_content[max_ls_content_size];
+    ret = sd_card_list_files(NULL, top_level_content, &max_ls_content_size, true);
     if (ret != 0)
     {
-        LOG_DBG("Listing top level files failed");
+        LOG_ERR("Listing top level files failed");
         return ret;
     }
-
-    LOG_DBG("Top Level Content: %s", top_level_content);
 
     char *token = strtok(top_level_content, "\n");
     while (token)
@@ -74,7 +77,7 @@ int epub_get_entry_points()
         {
             // The prepending string [DIR ] <foldername> is always 7 chars long.
             // As strings in C are just pointers, we can just skip it by adding +7.
-            LOG_DBG("Found path: %s", token + 7);
+            // LOG_DBG("Found path: %s", token + 7);
 
             // Remove \r from top level path
             char top_level_path[top_level_path_size];
@@ -90,7 +93,6 @@ int epub_get_entry_points()
             char assumed_path[EPUB_FILE_LEN_MAX] = {0};
             strncat(assumed_path, top_level_path, strlen(top_level_path));
             strncat(assumed_path, assumed_location, strlen(assumed_location));
-            LOG_DBG("Assumed path %s", assumed_path);
 
             struct fs_file_t f_entry;
             fs_file_t_init(&f_entry);
@@ -98,7 +100,6 @@ int epub_get_entry_points()
             ret = sd_card_open(assumed_path, &f_entry);
             if (ret == 0)
             {
-                LOG_DBG("Found %s", assumed_path);
                 // File found, add it to the list
                 strcpy(epub_entry_points[found], assumed_path);
                 sd_card_close(&f_entry);
@@ -108,27 +109,107 @@ int epub_get_entry_points()
         token = strtok(NULL, "\n");
     }
 
-    for (size_t i = 0; i < found; i++)
-    {
-        LOG_DBG("Entry point: %s", epub_entry_points[i]);
-    }
-
     found_books = found;
     return found;
 }
 
-// size_t read_buffer_size = 2000;
-// char read_buffer[read_buffer_size];
-// // OEBPS/Text/755B3C1FD5C84C238E2AFE25B22BBF61.xhtml
-// // OEBPS/Text/875D1C7E2F4549079666C018192CD2B0.xhtml
-// sd_card_open_read_close("Flavia/OEBPS/Text/755B3C1FD5C84C238E2AFE25B22BBF61.xhtml", read_buffer, &read_buffer_size);
-// // sd_card_open_read_close("FLAVIA/test.xhtml", read_buffer, &read_buffer_size);
-// read_buffer[read_buffer_size] = '\0';
-// LOG_DBG("%s", read_buffer);
-
-int epub_get_title_and_author()
+void epub_content_opf_metadata_get_element(const char *search_tag, const char *filename,
+                                           size_t file_read_size, char *element, size_t max_element_size)
 {
+    char *delim = ">";
+    char read_buffer[file_read_size];
+    uint16_t len_search_tag = strlen(search_tag) + 2;
+
+    sd_card_open_read_close(filename, read_buffer, &file_read_size);
+
+    char *token = strtok(read_buffer, delim);
+    while (token)
+    {
+        if (strstr(token, search_tag) != 0)
+        {
+            token = strtok(NULL, delim);
+
+            int token_len = strlen(token);
+            int copy_len = (token_len < max_element_size) ? token_len : max_element_size;
+
+            token[token_len - len_search_tag] = 0;
+
+            strncpy(element, token, copy_len);
+            element[copy_len] = 0;
+        }
+
+        token = strtok(NULL, delim);
+    }
+}
+
+void epub_get_book_titles()
+{
+    const char *search_tag = "dc:title";
+    size_t file_read_size = 800;
+
     for (size_t i = 0; i < found_books; i++)
     {
+        epub_content_opf_metadata_get_element(search_tag, epub_entry_points[i], file_read_size,
+                                              epub_titles[i], EPUB_TITLE_AUTHOR_LEN_MAX);
+        LOG_DBG("%s", epub_titles[i]);
     }
+}
+
+void epub_get_book_authors()
+{
+    const char *search_tag = "dc:creator";
+    size_t file_read_size = 800;
+
+    for (size_t i = 0; i < found_books; i++)
+    {
+        epub_content_opf_metadata_get_element(search_tag, epub_entry_points[i], file_read_size,
+                                              epub_authors[i], EPUB_TITLE_AUTHOR_LEN_MAX);
+        LOG_DBG("%s", epub_authors[i]);
+    }
+}
+
+int epub_get_next_chapter()
+{
+}
+
+int epub_get_previous_chapter()
+{
+}
+
+int epub_get_next_page()
+{
+    size_t read_size = EPUB_PAGE_SIZE - 1;
+
+    int ret = sd_card_open_read_at_offset_close(current_filename, &current_file_offset,
+                                                epub_page, &read_size);
+    epub_page[read_size] = 0;
+
+    LOG_DBG("%s", epub_page);
+
+    if (read_size < (EPUB_PAGE_SIZE - 1))
+    {
+        LOG_DBG("Open next chapter");
+        // TODO open next chapter
+    }
+
+    return ret;
+}
+
+int epub_get_prev_page()
+{
+    size_t read_size = (EPUB_PAGE_SIZE - 1);
+    current_file_offset -= 2 * read_size;
+
+    int ret = sd_card_open_read_at_offset_close(current_filename, &current_file_offset,
+                                                epub_page, &read_size);
+    epub_page[read_size] = 0;
+    LOG_DBG("%s", epub_page);
+
+    if (ret < 0)
+    {
+        LOG_DBG("Open previous chapter");
+        // TODO open prev chapter
+    }
+
+    return ret;
 }

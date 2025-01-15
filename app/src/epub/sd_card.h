@@ -92,6 +92,8 @@ int sd_card_open_write_close(char const *const filename, char const *const data,
  */
 int sd_card_open_read_close(char const *const filename, char *const buf, size_t *size);
 
+int sd_card_open_read_at_offset_close(char const *const filename, size_t *offset, char *const buf, size_t *size);
+
 /**
  * @brief	Open file on SD card.
  *

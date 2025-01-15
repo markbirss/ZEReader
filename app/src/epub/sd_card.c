@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(sd_card, LOG_LEVEL_DBG);
 #define SD_ROOT_PATH "/SD:/"
 /* Round down to closest 4-byte boundary */
 #define PATH_MAX_LEN ROUND_DOWN(CONFIG_FS_FATFS_MAX_LFN, 4)
-#define SD_CARD_LEVELS_MAX 8
+#define SD_CARD_LEVELS_MAX 3
 #define SD_CARD_BUF_SIZE 2000
 
 static uint32_t num_files_added;
@@ -116,6 +116,24 @@ static int traverse_down(char const *const path, uint8_t curr_depth, uint16_t re
 		if (strstr(token, "System Volume Information") != NULL)
 		{
 			/* Skipping System Volume Information */
+			token = strtok_r(NULL, "\n", &slab_A_ptr);
+			continue;
+		}
+		if (strstr(token, ".fseventsd") != NULL)
+		{
+			/* Skipping .fseventsd */
+			token = strtok_r(NULL, "\n", &slab_A_ptr);
+			continue;
+		}
+		if (strstr(token, ".Spotlight-V100") != NULL)
+		{
+			/* Skipping .fseventsd */
+			token = strtok_r(NULL, "\n", &slab_A_ptr);
+			continue;
+		}
+		if (strstr(token, "._") != NULL)
+		{
+			/* Skipping files starting with ._*/
 			token = strtok_r(NULL, "\n", &slab_A_ptr);
 			continue;
 		}
@@ -412,6 +430,66 @@ int sd_card_open_read_close(char const *const filename, char *const buf, size_t 
 	{
 		LOG_WRN("File is empty");
 	}
+
+	ret = fs_close(&f_entry);
+	if (ret)
+	{
+		LOG_ERR("Close file failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+int sd_card_open_read_at_offset_close(char const *const filename, size_t *offset,
+									  char *const buf, size_t *size)
+{
+	int ret;
+	struct fs_file_t f_entry;
+	char abs_path_name[PATH_MAX_LEN + 1] = SD_ROOT_PATH;
+
+	if (!sd_init_success)
+	{
+		return -ENODEV;
+	}
+
+	if (strlen(filename) > PATH_MAX_LEN)
+	{
+		LOG_ERR("Filename is too long");
+		return -FR_INVALID_NAME;
+	}
+
+	strcat(abs_path_name, filename);
+	fs_file_t_init(&f_entry);
+
+	ret = fs_open(&f_entry, abs_path_name, FS_O_READ);
+	if (ret)
+	{
+		LOG_ERR("Open file failed");
+		return ret;
+	}
+
+	ret = fs_seek(&f_entry, *offset, FS_SEEK_SET);
+	if (ret)
+	{
+		LOG_ERR("Seeking file failed");
+		return ret;
+	}
+
+	ret = fs_read(&f_entry, buf, *size);
+	if (ret < 0)
+	{
+		LOG_ERR("Read file failed. Ret: %d", ret);
+		return ret;
+	}
+
+	*size = ret;
+	if (*size == 0)
+	{
+		LOG_WRN("File is empty");
+	}
+
+	*offset = fs_tell(&f_entry);
 
 	ret = fs_close(&f_entry);
 	if (ret)
