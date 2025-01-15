@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
@@ -8,34 +7,12 @@
 
 #include <ui/ui.h>
 
+#include <lvgl.h>
+#include <lvgl_input_device.h>
+
 #include "epub/epub.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
-
-
-/*
-This can be used to access the GPIO Buttons directly.
-If used together with the LVGL input device, there is some
-concurrency who handles the event.
-So better just use one mechanism!
-*/
-
-// static struct gpio_dt_spec button_gpio = GPIO_DT_SPEC_GET_OR(
-// 	DT_ALIAS(sw0), gpios, {0});
-// static struct gpio_callback button_callback;
-
-// static void button_isr_callback(const struct device *port,
-// 								struct gpio_callback *cb,
-// 								uint32_t pins)
-// {
-// 	ARG_UNUSED(port);
-// 	ARG_UNUSED(cb);
-// 	ARG_UNUSED(pins);
-
-// 	LOG_DBG("GPIO button clicked");
-// 	// count = 0;
-// }
-
 
 int main(void)
 {
@@ -62,64 +39,29 @@ int main(void)
 		return 0;
 	}
 
-	/*
-	Initializing the GPIOs by hand is not needed when using the lvgl-button-input driver
-	*/
-	// if (gpio_is_ready_dt(&button_gpio))
-	// {
-	// 	int err;
-
-	// 	err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);
-	// 	if (err)
-	// 	{
-	// 		LOG_ERR("failed to configure button gpio: %d", err);
-	// 		return 0;
-	// 	}
-
-	// 	gpio_init_callback(&button_callback, button_isr_callback,
-	// 					   BIT(button_gpio.pin));
-
-	// 	err = gpio_add_callback(button_gpio.port, &button_callback);
-	// 	if (err)
-	// 	{
-	// 		LOG_ERR("failed to add button callback: %d", err);
-	// 		return 0;
-	// 	}
-
-	// 	err = gpio_pin_interrupt_configure_dt(&button_gpio,
-	// 										  GPIO_INT_EDGE_TO_ACTIVE);
-	// 	if (err)
-	// 	{
-	// 		LOG_ERR("failed to enable button callback: %d", err);
-	// 		return 0;
-	// 	}
-	// }
-
-	// lv_display_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
-
-
-/*
-	Commented out because LVGL seems to be broken right now
- */
-	// zereader_setup_page();
-	// zereader_setup_control_buttons(&context);
-
-/*
-	Commented out because LVGL seems to be broken right now
- */
-
-	epub_init_sd_card();
+	epub_initialize();
 	epub_get_entry_points();
+	epub_get_book_titles();
+	epub_get_book_authors();
 
+	epub_get_next_page();
+	epub_get_next_page();
+	epub_get_next_page();
+	epub_get_prev_page();
+	epub_get_prev_page();
 
-	// display_blanking_off(display_dev);
-	// lv_timer_handler();
+	zereader_setup_page();
+	zereader_setup_control_buttons(&context);
 
-	// while (1) {
-	// 	uint32_t sleep_ms = lv_timer_handler();
+	display_blanking_off(display_dev);
+	lv_timer_handler();
 
-	// 	k_msleep(MIN(sleep_ms, INT32_MAX));
-	// }
+	while (1)
+	{
+		uint32_t sleep_ms = lv_timer_handler();
+
+		k_msleep(MIN(sleep_ms, INT32_MAX));
+	}
 
 	return 0;
 }
