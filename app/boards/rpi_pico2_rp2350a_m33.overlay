@@ -71,7 +71,7 @@
 };
 
 // Pinmux defines:
-// https://docs.zephyrproject.org/apidoc/latest/rpi-pico-pinctrl-common_8h_source.html
+// https: //docs.zephyrproject.org/apidoc/latest/rpi-pico-pinctrl-common_8h_source.html
 &pinctrl {
   spi1_default: spi1_default {
     group1 {
@@ -91,7 +91,6 @@
   pinctrl-names = "default";
 
   cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
-
   sdhc0: sdhc@0 {
     compatible = "zephyr,sdhc-spi-slot";
     reg = <0>;
@@ -101,7 +100,7 @@
       disk-name = "SD";
       status = "okay";
     };
-    spi-max-frequency = <20000000>;
+    spi-max-frequency = < 10000000 >;
   };
 };
 
