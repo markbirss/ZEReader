@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(sd_card, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(sd_card, CONFIG_ZEREADER_LOG_LEVEL);
 
 #define SD_ROOT_PATH "/SD:/"
 /* Round down to closest 4-byte boundary */
@@ -487,6 +487,54 @@ int sd_card_open_read_at_offset_close(char const *const filename, size_t *offset
 	if (*size == 0)
 	{
 		LOG_WRN("File is empty");
+	}
+
+	*offset = fs_tell(&f_entry);
+
+	ret = fs_close(&f_entry);
+	if (ret)
+	{
+		LOG_ERR("Close file failed");
+		return ret;
+	}
+
+	return 0;
+}
+
+int sd_card_tell_end_offset(char const *const filename, size_t *offset)
+{
+	int ret;
+	struct fs_file_t f_entry;
+	char abs_path_name[PATH_MAX_LEN + 1] = SD_ROOT_PATH;
+
+	*offset = 0;
+
+	if (!sd_init_success)
+	{
+		return -ENODEV;
+	}
+
+	if (strlen(filename) > PATH_MAX_LEN)
+	{
+		LOG_ERR("Filename is too long");
+		return -FR_INVALID_NAME;
+	}
+
+	strcat(abs_path_name, filename);
+	fs_file_t_init(&f_entry);
+
+	ret = fs_open(&f_entry, abs_path_name, FS_O_READ);
+	if (ret)
+	{
+		LOG_ERR("Open file failed");
+		return ret;
+	}
+
+	ret = fs_seek(&f_entry, *offset, FS_SEEK_END);
+	if (ret)
+	{
+		LOG_ERR("Seeking file failed");
+		return ret;
 	}
 
 	*offset = fs_tell(&f_entry);

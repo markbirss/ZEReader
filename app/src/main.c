@@ -5,14 +5,13 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/kernel.h>
 
-#include <ui/ui.h>
-
 #include <lvgl.h>
 #include <lvgl_input_device.h>
 
 #include "epub/epub.h"
+#include "ui/ui.h"
 
-LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(main, CONFIG_ZEREADER_LOG_LEVEL);
 
 int main(void)
 {
@@ -39,19 +38,14 @@ int main(void)
 		return 0;
 	}
 
-	epub_initialize();
-	epub_get_entry_points();
-	epub_get_book_titles();
-	epub_get_book_authors();
-
-	epub_get_next_page();
-	epub_get_next_page();
-	epub_get_next_page();
-	epub_get_prev_page();
-	epub_get_prev_page();
-
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
+
+	epub_initialize();
+
+	// Testing
+	epub_open_book(0);
+
 
 	display_blanking_off(display_dev);
 	lv_timer_handler();
