@@ -16,6 +16,7 @@ jobs:
         with:
           app-path: app
           toolchains: arm-zephyr-eabi
+          manifest-file-name: ../west.yml
 
       - name: Build Firmware
         run: |
