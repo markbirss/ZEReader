@@ -17,15 +17,9 @@ manifest:
 
       import:
         name-allowlist:
-          - cmsis
           - fatfs
-          - hal_nordic
           - hal_rpi_pico
-          - hal_stm32
-          - hal_littlefs
           - lvgl
-          - mcuboot
-          - segger
 
   self:
     west-commands: scripts/west-commands.yml

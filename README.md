@@ -1,22 +1,96 @@
 # ZEReader
 ZEReader is a Zephyr based firmware for an open hardware eBook reader approach.
+See https://github.com/Allegra42/ZEReader-KiCad for more information about the hardware design.
+
+The firmware is currently in a really early PoC stage.
+Nevertheless, due to Zephyr, it is easily portable and adaptable to different hardware platforms
+which provide the essential components and a proper device tree (overlay) configuration.
 
 ## Basic Hardware Components
+For developing and testing the following basic components are used:
+
 - Raspberry Pi Pico 1/2
 - Waveshare ePaper Display 7,5" (Gooddisplay GDEW075T7, GDEY075T7) with UC8179 controller
 - SD Card Reader (SPI)
+- 4 Buttons for navigation
 
+With proper device tree (overlay) and maybe some prj.conf or currently even code configurations,
+the firmware should be easily adaptable to other microcontrollers and/or displays.
 
 ## Setup for local development
-TODO
+```
+west init -m git@github.com:Allegra42/ZEReader.git zereader-workspace
+
+cd zereader-workspace
+
+west update
+pip install -r zephyr/scripts/requirements.txt
+cd zephyr-rtos
+west sdk install
+```
+
 
 ## Build
 ### Build for Raspberry Pi Pico 1
 ```
-west build -p always -b rpi_pico2/rp2350a/m33 app
+west build -b rpi_pico app -p always
 ```
 
 ### Build for Raspberry Pi Pico 2
 ```
-west build -p always -b rpi_pico app
+west build -b rpi_pico2/rp2350a/m33 app -p always
 ```
+
+### Other useful build commands
+```
+# Update Zephyr and external modules
+# The west.yml of this project uses potentially unstable main branches from Zephyr and the modules.
+# This was needed as neighter Pi Pico 2 nor LVGL v9 were included in the 4.0 release, but more or less important for this project.
+# Be aware this can break!
+
+west update
+
+# May check if patches in this repo are (still) needed or new ones needed or new issues showed up.
+
+# Generate SBoM
+west spdx
+```
+
+## Flash Pico
+- disconnect USB
+- press the 'BOOTSEL' button during reconnect
+- the device shows up as a mass storage
+- copy 'build/zephyr/zephyr.uf2' to the device
+- it flashes itself and restarts running the firmware
+
+## Logs
+Logs are printed via the Pi Pico default UART pins with 115200 bauds.
+
+## Debugging
+With Blackmagic Debug Probe using the SWD interface:
+
+- connect the Blackmagic Debug Probe to the Pi Pico's SWD header
+- `west debug --runner blackmagicprobe`
+-> Connects to a GDB session
+
+- set breakpoint with
+  `break <full/source/code/file/path>:<linenumber>`
+- step through / step in with GDB commands (next/n, step in/si, ..)
+
+## Current state
+This is still a work-in-process.
+The firmware shows a proof-of-concept that reading EPUBs as they are is possible with the available resources of a cheap microcontroller unit like the RP2040/RP2350.
+(Right now, without unzipping the EPUB files directly from Zephyr.)
+
+The firmware supports showing the contents of a book in correct order while jumping over pictures and leave (X)HTML formatting untouched.
+Stepping forward is fine, stepping backwards still has some issues on chapter(file) borders.
+
+The UI implementation is currently barely existing.
+The display orientation is still landscape and refresh configurations need to be tuned for an actually usable reading experience.
+
+The epub and ui related code should be built as a Zephyr module. Due to issues with including the filesystem header ff.h, both are currently a part of the app while the needed directory structure and CMake files are kept for reference and faster moving. Building these parts as Zephyr modules would improve testing with Twister and e.g. switching out the UI implementation.
+
+Config options for EPUB handling are still part of epub.h and should move to an own KConfig definition as the project proceeds in order to keep these configurations in a central location adopt Zephyr idioms.
+
+For optimization, epub handling is currently heavily stack based with predefined sizes.
+Trying to open en EPUB with e.g. a larger title/pathname as configured will fail.
