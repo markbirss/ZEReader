@@ -45,19 +45,6 @@ static void button_right_clicked_cb(lv_event_t *e)
 
 void zereader_setup_control_buttons(context_t *context)
 {
-	lv_display_set_rotation(lv_display_get_default(), LV_DISPLAY_ROTATION_180);
-	// lv_theme_mono_init(lv_display_get_default(), false, lv_font_default());
-	// lv_theme_default_init(lv_display_get_default(), lv_color_white(), lv_color_black(), false, LV_FONT_MONTSERRAT_24);
-	// lv_theme_apply(lv_screen_active());
-
-	// lv_style_t style_default;
-	// lv_style_init(&style_default);
-	// lv_style_set_bg_color(&style_default, lv_color_black());
-	// lv_style_set_border_width(&style_default, 2);
-	// lv_style_set_text_color(&style_default, lv_color_white());
-	// lv_style_set_border_color(&style_default, lv_color_white());
-
-	// lv_obj_set_style_bg_color(lv_screen_active(), lv_color_white(), LV_PART_MAIN);
 	lv_obj_set_style_text_color(lv_screen_active(), lv_color_white(), LV_PART_MAIN);
 
 	LOG_DBG("Button Setup");

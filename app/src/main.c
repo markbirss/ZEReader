@@ -41,10 +41,21 @@ int main(void)
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
 
+
 	epub_initialize();
 
+	LOG_DBG("######### Listing available books #########");
+	book_list_t *books = epub_get_book_list();
+	while (books != NULL)
+	{
+		LOG_DBG("NR: %d - %s - %s - %s - %s", books->book->number, books->book->title, books->book->author, books->book->root_dir, books->book->entry_point);
+		books = books->next;
+	}
+	LOG_DBG("##########################################");
+	
+
 	// Testing
-	epub_open_book(0);
+	epub_open_book(epub_get_book_entry(0));
 
 
 	display_blanking_off(display_dev);

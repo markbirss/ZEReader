@@ -6,8 +6,8 @@ index 1fd19c3e7..14c5873c3 100644
   *      MACROS
   **********************/
  
--#define I1_LUM_THRESHOLD 127
-+#define I1_LUM_THRESHOLD 100
+-#define I1_LUM_THRESHOLD 100
++#define I1_LUM_THRESHOLD 127
  
  #ifndef LV_DRAW_SW_I1_BLEND_NORMAL_TO_I1
      #define LV_DRAW_SW_I1_BLEND_NORMAL_TO_I1(...)                    LV_RESULT_INVALID

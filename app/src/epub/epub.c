@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "sd_card.h"
 #include "epub.h"
@@ -7,19 +8,68 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(epub, CONFIG_ZEREADER_LOG_LEVEL);
 
-static char epub_root_dir[EPUB_FILE_NUM_MAX][EPUB_FILE_LEN_MAX / 2];
-static char epub_entry_points[EPUB_FILE_NUM_MAX][EPUB_FILE_LEN_MAX];
-static char epub_titles[EPUB_FILE_NUM_MAX][EPUB_TITLE_AUTHOR_LEN_MAX];
-static char epub_authors[EPUB_FILE_NUM_MAX][EPUB_TITLE_AUTHOR_LEN_MAX];
-static char epub_current_book_chapter_list[EPUB_CHAPTERS_MAX][EPUB_FILE_LEN_MAX];
-static char epub_current_page[EPUB_PAGE_SIZE];
 
-char current_filename[EPUB_FILE_LEN_MAX];
-static uint16_t found_books = 0;
-size_t current_book = -1;
-size_t current_file_offset = 0;
-size_t current_chapter = 0;
-uint16_t current_book_num_chapters = 0;
+book_list_t *book_list = NULL;
+current_book_t *current_book = NULL;
+
+
+char *strdup (const char *s)
+{
+  size_t len = strlen (s) + 1;
+  void *new = malloc (len);
+  if (new == NULL)
+    return NULL;
+  return (char *) memcpy (new, s, len);
+}
+
+char *strndup (const char *s, size_t n)
+{
+  size_t len = strnlen (s, n);
+  char *new = (char *) malloc (len + 1);
+  if (new == NULL)
+    return NULL;
+  new[len] = '\0';
+  return (char *) memcpy (new, s, len);
+}
+
+book_entry_t *epub_add_book_entry()
+{
+    book_list_t *node = (book_list_t *)malloc(sizeof(book_list_t));
+    node->book = (book_entry_t *)malloc(sizeof(book_entry_t));
+    node->next = NULL;
+
+    if (book_list == NULL) {
+        book_list = node;
+        return node->book;
+    }
+
+    book_list_t *current = book_list;
+    while (current->next != NULL)
+    {
+        current = current->next;
+    }
+
+    current->next = node;
+    return node->book;
+}
+
+book_entry_t *epub_get_book_entry(uint16_t number)
+{
+    while (book_list != NULL)
+    {
+        if (book_list->book->number == number)
+        {
+            return book_list->book;
+        }
+        book_list = book_list->next;
+    }
+    return NULL;
+}
+
+book_list_t *epub_get_book_list()
+{
+    return book_list;
+}
 
 // This implementation is a first compromise in terms of time, effort and memory/search time optimization.
 // Usually, the starting point (rootfile) of an ePub is called content.opf and located in the OEBPS
@@ -56,16 +106,6 @@ int epub_get_entry_points()
     char *token = strtok(top_level_content, "\n");
     while (token)
     {
-        // // Recursive search approach - kept here for reference
-        // // Works but still inefficient and issues with large folders
-        // ret = sd_card_list_files_match(1, EPUB_FILE_LEN_MAX, content_opf, token+7, "content.opf");
-        // if (ret > 0) {
-        //     LOG_DBG("Found: %s", content_opf[0]);
-        //     // Found file, copy it to the permanent buffer
-        //     strcpy(epub_entry_points[found], content_opf[0]);
-        //     found++;
-        // }
-
         // Remove [DIR ] and search for content.opf
         // Each top level folder should only contain one content.opf
         if (strstr(token, "[DIR ]") != 0)
@@ -95,28 +135,30 @@ int epub_get_entry_points()
             ret = sd_card_open(assumed_path, &f_entry);
             if (ret == 0)
             {
+                LOG_DBG("Found valid book entrypoint");
+                book_entry_t *book = epub_add_book_entry();
+                LOG_DBG("Created, book entry, filling...");
+                book->number = found;
                 // File found, add it to the list
-                strncpy(epub_entry_points[found], assumed_path, strlen(assumed_path));
-                strncpy(epub_root_dir[found], top_level_path, strlen(top_level_path));
+                book->entry_point = strdup(assumed_path);
+                book->root_dir = strdup(top_level_path);
                 sd_card_close(&f_entry);
                 found++;
             }
         }
         token = strtok(NULL, "\n");
     }
-
-    found_books = found;
     return ret;
 }
 
-void epub_content_opf_metadata_get_element(const char *search_tag, const char *filename,
-                                           size_t file_read_size, char *element, size_t max_element_size)
+char* epub_content_opf_metadata_get_element(const char *search_tag, const char *chapter_filename,
+                                           size_t file_read_size, size_t max_element_size)
 {
     char *delim = ">";
     char read_buffer[file_read_size];
     uint16_t len_search_tag = strlen(search_tag) + 2;
 
-    sd_card_open_read_close(filename, read_buffer, &file_read_size);
+    sd_card_open_read_close(chapter_filename, read_buffer, &file_read_size);
 
     char *token = strtok(read_buffer, delim);
     while (token)
@@ -129,50 +171,35 @@ void epub_content_opf_metadata_get_element(const char *search_tag, const char *f
             int copy_len = (token_len < max_element_size) ? token_len : max_element_size;
 
             token[token_len - len_search_tag] = 0;
-
-            strncpy(element, token, copy_len);
-            element[copy_len] = 0;
+            return token;
         }
 
         token = strtok(NULL, delim);
     }
 }
 
-void epub_parse_book_titles()
+void epub_get_authors_and_titles()
 {
-    const char *search_tag = "dc:title";
     size_t file_read_size = 800;
+    const char *search_creator = "dc:creator";
+    const char *search_title = "dc:title";
+    char *element;
 
-    for (size_t i = 0; i < found_books; i++)
+    book_list_t *current_elem = book_list;
+    while (current_elem != NULL)
     {
-        epub_content_opf_metadata_get_element(search_tag, epub_entry_points[i], file_read_size,
-                                              epub_titles[i], EPUB_TITLE_AUTHOR_LEN_MAX);
-        LOG_DBG("%s", epub_titles[i]);
+        book_entry_t *book = current_elem->book;
+        element = epub_content_opf_metadata_get_element(search_creator, book->entry_point, file_read_size,
+                                              EPUB_TITLE_AUTHOR_LEN_MAX);
+        book->author = strdup(element);
+
+        element = epub_content_opf_metadata_get_element(search_title, book->entry_point, file_read_size,
+                                              EPUB_TITLE_AUTHOR_LEN_MAX);
+        book->title = strdup(element);
+        current_elem = current_elem->next;
     }
 }
 
-char (*epub_get_title_list(void))[EPUB_TITLE_AUTHOR_LEN_MAX]
-{
-    return epub_titles;
-}
-
-void epub_parse_book_authors()
-{
-    const char *search_tag = "dc:creator";
-    size_t file_read_size = 800;
-
-    for (size_t i = 0; i < found_books; i++)
-    {
-        epub_content_opf_metadata_get_element(search_tag, epub_entry_points[i], file_read_size,
-                                              epub_authors[i], EPUB_TITLE_AUTHOR_LEN_MAX);
-        LOG_DBG("%s", epub_authors[i]);
-    }
-}
-
-char (*epub_get_author_list(void))[EPUB_TITLE_AUTHOR_LEN_MAX]
-{
-    return epub_authors;
-}
 
 int char_get_index(char *str, char c)
 {
@@ -193,9 +220,6 @@ int epub_parse_chapter_files(const char *content_opf)
     char *delim = ">";
     char *search_tag = "href=\"";
     uint16_t len_search_tag = strlen(search_tag);
-
-    // Reset chapter counter when parsing a new book
-    current_book_num_chapters = 0;
 
     while (read_size == 800)
     {
@@ -226,11 +250,11 @@ int epub_parse_chapter_files(const char *content_opf)
                 }
                 else if (path_len < EPUB_FILE_LEN_MAX && path_len > 0)
                 {
-                    strncpy(epub_current_book_chapter_list[current_book_num_chapters], path, path_len);
-                    epub_current_book_chapter_list[current_book_num_chapters][path_len] = 0;
+                    strncpy(current_book->chapter_list[current_book->num_chapters], path, path_len);
+                    current_book->chapter_list[current_book->num_chapters][path_len] = 0;
 
-                    LOG_DBG("chapter path: %s", epub_current_book_chapter_list[current_book_num_chapters]);
-                    current_book_num_chapters++;
+                    LOG_DBG("chapter path: %s", current_book->chapter_list[current_book->num_chapters]);
+                    current_book->num_chapters++;
                 }
                 else if (path_len < 0)
                 {
@@ -249,9 +273,9 @@ int epub_parse_chapter_files(const char *content_opf)
 void epub_build_chapter_path(char *path)
 {
     memset(path, 0, EPUB_FILE_LEN_MAX);
-    strncpy(path, epub_root_dir[current_book], strlen(epub_root_dir[current_book]));
+    strncpy(path, current_book->root_dir, strlen(current_book->root_dir));
     strcat(path, "/OEBPS/");
-    strcat(path, epub_current_book_chapter_list[current_chapter]);
+    strcat(path, current_book->chapter_list[current_book->state.chapter]);
 
     LOG_DBG("Full path %s", path);
 }
@@ -263,19 +287,19 @@ bool is_html(char *path)
 
 int epub_get_next_chapter()
 {
-    current_file_offset = 0;
+    current_book->state.file_offset = 0;
     LOG_DBG("Get next chapter");
-    if (current_chapter == current_book_num_chapters - 1)
+    if (current_book->state.chapter == current_book->num_chapters - 1)
     {
         LOG_DBG("Book finished!");
         return 0;
     }
-    current_chapter++;
+    current_book->state.chapter++;
 
     LOG_DBG("before get path");
-    epub_build_chapter_path(current_filename);
+    epub_build_chapter_path(current_book->chapter_filename);
 
-    if (!is_html(current_filename))
+    if (!is_html(current_book->chapter_filename))
     {
         epub_get_next_chapter();
     }
@@ -283,25 +307,25 @@ int epub_get_next_chapter()
 
 int epub_get_prev_chapter()
 {
-    if (current_chapter == 0)
+    if (current_book->state.chapter == 0)
     {
         LOG_DBG("Already at the beginning");
         return 0;
     }
-    current_chapter--;
+    current_book->state.chapter--;
 
-    epub_build_chapter_path(current_filename);
+    epub_build_chapter_path(current_book->chapter_filename);
 
-    if (!is_html(current_filename))
+    if (!is_html(current_book->chapter_filename))
     {
         epub_get_prev_chapter();
     }
     else
     {
         // TODO does not work as expected right now
-        LOG_DBG("Opening previous file %s", current_filename);
-        sd_card_tell_end_offset(current_filename, &current_file_offset);
-        LOG_DBG("End offset of the prev chapter: %d", current_file_offset);
+        LOG_DBG("Opening previous file %s", current_book->chapter_filename);
+        sd_card_tell_end_offset(current_book->chapter_filename, &current_book->state.file_offset);
+        LOG_DBG("End offset of the prev chapter: %d", current_book->state.file_offset);
     }
 }
 
@@ -309,11 +333,11 @@ int epub_parse_next_page()
 {
     size_t read_size = EPUB_PAGE_SIZE - 1;
 
-    int ret = sd_card_open_read_at_offset_close(current_filename, &current_file_offset,
-                                                epub_current_page, &read_size);
-    epub_current_page[read_size] = 0;
+    int ret = sd_card_open_read_at_offset_close(current_book->chapter_filename, &current_book->state.file_offset,
+                                                current_book->page, &read_size);
+    current_book->page[read_size] = 0;
 
-    LOG_DBG("%s", epub_current_page);
+    LOG_DBG("%s", current_book->page);
 
     if (read_size < (EPUB_PAGE_SIZE - 1))
     {
@@ -329,7 +353,7 @@ char *epub_get_next_page()
 
     if (epub_parse_next_page() == 0)
     {
-        return epub_current_page;
+        return current_book->page;
     }
     LOG_DBG("Can't get page");
     return "";
@@ -338,12 +362,12 @@ char *epub_get_next_page()
 int epub_parse_prev_page()
 {
     size_t read_size = (EPUB_PAGE_SIZE - 1);
-    current_file_offset -= 2 * read_size;
+    current_book->state.file_offset -= 2 * read_size;
 
-    int ret = sd_card_open_read_at_offset_close(current_filename, &current_file_offset,
-                                                epub_current_page, &read_size);
-    epub_current_page[read_size] = 0;
-    LOG_DBG("%s", epub_current_page);
+    int ret = sd_card_open_read_at_offset_close(current_book->chapter_filename, &current_book->state.file_offset,
+                                                current_book->page, &read_size);
+    current_book->page[read_size] = 0;
+    LOG_DBG("%s", current_book->page);
 
     if (ret < 0)
     {
@@ -359,22 +383,26 @@ char *epub_get_prev_page()
 
     if (epub_parse_prev_page() == 0)
     {
-        return epub_current_page;
+        return current_book->page;
     }
     LOG_DBG("Can't get page");
     return "";
 }
 
-int epub_open_book(uint16_t num)
+int epub_open_book(book_entry_t *book)
 {
+    free(current_book);
+    current_book = (current_book_t *)malloc(sizeof(current_book_t));
 
-    current_book = num;
-    current_chapter = -1;
-    current_file_offset = 0;
-    current_book_num_chapters = 0;
-    memset(current_filename, 0, EPUB_FILE_LEN_MAX);
+    current_book->state.title = strdup(book->title);
+    current_book->state.chapter = -1;
+    current_book->state.file_offset = 0;
 
-    epub_parse_chapter_files(epub_entry_points[current_book]);
+    current_book->num_chapters = 0;
+    current_book->root_dir = book->root_dir;
+    memset(current_book->chapter_filename, 0, EPUB_FILE_LEN_MAX);
+
+    epub_parse_chapter_files(book->entry_point);
     epub_get_next_chapter();
 }
 
@@ -382,6 +410,7 @@ int epub_initialize()
 {
     int ret = 0;
 
+    LOG_DBG("Init SD card");
     ret = sd_card_init();
     if (ret)
     {
@@ -389,6 +418,7 @@ int epub_initialize()
         return ret;
     }
 
+    LOG_DBG("Get entry points");
     // ret =
     epub_get_entry_points();
     // if (ret) {
@@ -396,12 +426,12 @@ int epub_initialize()
     //     return ret;
     // }
 
+    LOG_DBG("Get authors and titles");
     // ret =
-    epub_parse_book_titles();
+    epub_get_authors_and_titles();
     // if (ret) {
     //     LOG_ERR("Parse book titles failed");
     //     return ret;
     // }
 
-    epub_parse_book_authors();
 }

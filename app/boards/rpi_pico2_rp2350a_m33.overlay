@@ -25,7 +25,7 @@
       height = <480>;
       busy-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 
-      softstart = [ 17 17 17 17  ];
+      softstart = [ 17 17 17  ];
 
       full {
         pwr = [ 07 07 3f 3f  ];
