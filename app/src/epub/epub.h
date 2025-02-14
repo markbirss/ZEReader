@@ -8,6 +8,7 @@
 #define EPUB_CHAPTERS_MAX 150
 #define EPUB_PAGE_SIZE 300
 
+
 typedef struct {
     size_t number;
     char *title;
@@ -16,11 +17,28 @@ typedef struct {
     char *root_dir;
 } book_entry_t;
 
+typedef struct llist {
+    book_entry_t *book;
+    struct llist *next;
+} book_list_t;
+
+typedef struct {
+    size_t number;
+    char *path;
+} chapter_entry_t;
+
+typedef struct dllist {
+    chapter_entry_t *chapter;
+    struct dllist *next;
+    struct dllist *prev;
+} chapter_list_t;
+
 typedef struct {
     uint16_t num_chapters;
-    char chapter_list[EPUB_CHAPTERS_MAX][EPUB_FILE_LEN_MAX];
+    chapter_list_t *chapter_list;
+    chapter_list_t *current_chapter;
     char page[EPUB_PAGE_SIZE];
-    char chapter_filename[EPUB_FILE_LEN_MAX];
+    char *chapter_filename;
     char *root_dir;
 
     struct {
@@ -32,11 +50,6 @@ typedef struct {
     } state;
 
 } current_book_t;
-
-typedef struct llist {
-    book_entry_t *book;
-    struct llist *next;
-} book_list_t;
 
 
 
