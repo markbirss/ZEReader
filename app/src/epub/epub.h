@@ -1,11 +1,9 @@
 #ifndef _EPUB_H_
 #define _EPUB_H_
 
-#define EPUB_FILE_NUM_MAX 6
-#define EPUB_FILE_LEN_MAX 100
-#define EPUB_LSDIR_CHARS_MAX 2000
-#define EPUB_TITLE_AUTHOR_LEN_MAX 50
-#define EPUB_CHAPTERS_MAX 150
+// 255 is the maximum file name length supported by the filesystem
+#define EPUB_FILE_LEN_MAX 255 
+#define EPUB_LSDIR_CHARS_MAX 4096
 #define EPUB_PAGE_SIZE 300
 
 

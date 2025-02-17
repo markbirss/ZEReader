@@ -55,7 +55,7 @@ int main(void)
 	
 
 	// Testing
-	epub_open_book(epub_get_book_entry(0));
+	epub_open_book(epub_get_book_entry(2));
 
 
 	display_blanking_off(display_dev);
