@@ -20,4 +20,6 @@ void zereader_setup_page();
 void zereader_print_page();
 void zereader_clean_page();
 
+void zereader_show_logo();
+void zereader_clean_logo();
 #endif

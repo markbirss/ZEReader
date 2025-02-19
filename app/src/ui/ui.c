@@ -14,6 +14,7 @@ lv_obj_t *button_mid_label;
 lv_obj_t *button_right_label;
 
 lv_obj_t *text_area;
+lv_obj_t *logo;
 
 void zereader_print_prev_page();
 void zereader_print_next_page();
@@ -33,6 +34,7 @@ static void button_mid_clicked_cb(lv_event_t *e)
 	context_t *context = lv_event_get_user_data(e);
 	LOG_DBG("Context: %s", context_strings[*context]);
 	zereader_clean_page();
+	zereader_clean_logo();
 }
 
 static void button_right_clicked_cb(lv_event_t *e)
@@ -108,4 +110,21 @@ void zereader_clean_page()
 {
 	lv_obj_invalidate(lv_screen_active());
 	lv_label_set_text(text_area, " ");
+}
+
+void zereader_show_logo()
+{
+	LV_IMG_DECLARE(zereaderlogomarx);
+	logo = lv_image_create(lv_screen_active());
+	lv_image_set_src(logo, &zereaderlogomarx);
+	lv_obj_align(logo, LV_ALIGN_CENTER, 0, 30);
+}
+
+void zereader_clean_logo()
+{
+	if (logo != NULL)
+	{
+		lv_obj_del(logo);
+		logo = NULL;
+	}
 }

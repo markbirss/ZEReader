@@ -41,6 +41,7 @@ int main(void)
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
 	zereader_clean_page();
+	zereader_show_logo();
 
 
 	epub_initialize();
@@ -57,7 +58,6 @@ int main(void)
 
 	// Testing
 	epub_open_book(epub_get_book_entry(2));
-
 
 	display_blanking_off(display_dev);
 	lv_timer_handler();
