@@ -40,6 +40,7 @@ int main(void)
 
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
+	zereader_clean_page();
 
 
 	epub_initialize();

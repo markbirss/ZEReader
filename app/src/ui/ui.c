@@ -106,5 +106,6 @@ void zereader_print_prev_page()
 
 void zereader_clean_page()
 {
+	lv_obj_invalidate(lv_screen_active());
 	lv_label_set_text(text_area, " ");
 }
