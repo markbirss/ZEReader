@@ -456,8 +456,10 @@ int epub_open_book(book_entry_t *book)
     current_book->state.chapter = -1;
     current_book->state.file_offset = 0;
 
-    current_book->chapter_list = NULL;
     current_book->num_chapters = 0;
+    current_book->chapter_list = NULL;
+    current_book->current_chapter = NULL;
+    current_book->chapter_filename = NULL;
     current_book->root_dir = book->root_dir;
 
     epub_parse_chapter_files(book->entry_point);
