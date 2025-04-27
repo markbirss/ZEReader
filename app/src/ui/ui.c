@@ -103,7 +103,7 @@ void zereader_setup_control_buttons(context_t *context)
 void zereader_setup_page()
 {
 	LOG_DBG("Setup page");
-	text_area = lv_label_create(lv_screen_active());
+	text_area = lv_textarea_create(lv_screen_active());
 	LOG_DBG("Created page label");
 	// lv_obj_align(text_area, LV_ALIGN_TOP_LEFT, 10, 20);
 	// LOG_DBG("Aligned page label");
@@ -117,18 +117,20 @@ void zereader_setup_page()
 
 void zereader_print_next_page()
 {
-	lv_label_set_text(text_area, epub_get_next_page());
+	lv_textarea_set_text(text_area, epub_get_next_page());
+	//lv_textarea_add_text(text_area, epub_get_next_page());
 }
 
 void zereader_print_prev_page()
 {
-	lv_label_set_text(text_area, epub_get_prev_page());
+	lv_textarea_set_text(text_area, epub_get_prev_page());
 }
 
 void zereader_clean_page()
 {
 	lv_obj_invalidate(lv_screen_active());
-	lv_label_set_text(text_area, " ");
+	lv_obj_del(logo);
+	lv_textarea_set_text(text_area, " ");
 }
 
 void zereader_show_logo()

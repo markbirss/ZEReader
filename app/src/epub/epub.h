@@ -4,7 +4,7 @@
 // 255 is the maximum file name length supported by the filesystem
 #define EPUB_FILE_LEN_MAX 255 
 #define EPUB_LSDIR_CHARS_MAX 4096
-#define EPUB_PAGE_SIZE 300
+#define EPUB_PAGE_SIZE 1400
 
 
 typedef struct {

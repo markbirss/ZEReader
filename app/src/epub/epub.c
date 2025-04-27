@@ -195,7 +195,7 @@ int epub_get_entry_points()
 }
 
 char *epub_content_opf_metadata_get_element(const char *search_tag, const char *chapter_filename,
-                                            size_t file_read_size, size_t max_element_size)
+                                            size_t file_read_size)
 {
     char *delim = ">";
     char read_buffer[file_read_size];
@@ -228,12 +228,10 @@ void epub_get_authors_and_titles()
     while (current_elem != NULL)
     {
         book_entry_t *book = current_elem->book;
-        element = epub_content_opf_metadata_get_element(search_creator, book->entry_point, file_read_size,
-                                                        EPUB_FILE_LEN_MAX);
+        element = epub_content_opf_metadata_get_element(search_creator, book->entry_point, file_read_size);
         book->author = strdup(element);
 
-        element = epub_content_opf_metadata_get_element(search_title, book->entry_point, file_read_size,
-                                                        EPUB_FILE_LEN_MAX);
+        element = epub_content_opf_metadata_get_element(search_title, book->entry_point, file_read_size);
         book->title = strdup(element);
         current_elem = current_elem->next;
     }
