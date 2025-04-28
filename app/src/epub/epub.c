@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "sd_card.h"
+#include "sd.h"
 #include "epub.h"
 
 #include <zephyr/logging/log.h>
@@ -135,11 +135,10 @@ int epub_get_entry_points()
     // Recursively searching content.opf files from SD card root is a memory efficiency nightmare
     // Instead, get top level folders and start searching the content.opf from there.
     char assumed_location[] = "/OEBPS/content.opf\0";
-    uint16_t top_level_path_size = EPUB_FILE_LEN_MAX - strlen(assumed_location);
 
     size_t max_ls_content_size = EPUB_LSDIR_CHARS_MAX;
     char top_level_content[max_ls_content_size];
-    ret = sd_card_list_files(NULL, top_level_content, &max_ls_content_size, true);
+    ret = sd_list_directories(NULL, top_level_content, &max_ls_content_size);
     if (ret != 0)
     {
         LOG_ERR("Listing top level files failed");
@@ -149,46 +148,27 @@ int epub_get_entry_points()
     char *token = strtok(top_level_content, "\n");
     while (token)
     {
-        // Remove [DIR ] and search for content.opf
-        // Each top level folder should only contain one content.opf
-        if (strstr(token, "[DIR ]") != 0)
+        char assumed_path[EPUB_FILE_LEN_MAX] = {0};
+        strncat(assumed_path, token, strlen(token));
+        strncat(assumed_path, assumed_location, strlen(assumed_location));
+
+        struct fs_file_t f_entry;
+        fs_file_t_init(&f_entry);
+
+        ret = sd_open(assumed_path, &f_entry);
+        if (ret == 0)
         {
-            // The prepending string [DIR ] <foldername> is always 7 chars long.
-            // As strings in C are just pointers, we can just skip it by adding +7.
-            // LOG_DBG("Found path: %s", token + 7);
-
-            // Remove \r from top level path
-            char top_level_path[top_level_path_size];
-            strncpy(top_level_path, token + 7, strlen(token + 7));
-            top_level_path[strlen(token + 7) - 1] = 0;
-
-            if (strlen(top_level_path) + strlen(assumed_location) > EPUB_FILE_LEN_MAX)
-            {
-                LOG_DBG("Resulting path is too long!");
-                return -1;
-            }
-
-            char assumed_path[EPUB_FILE_LEN_MAX] = {0};
-            strncat(assumed_path, top_level_path, strlen(top_level_path));
-            strncat(assumed_path, assumed_location, strlen(assumed_location));
-
-            struct fs_file_t f_entry;
-            fs_file_t_init(&f_entry);
-
-            ret = sd_card_open(assumed_path, &f_entry);
-            if (ret == 0)
-            {
-                LOG_DBG("Found valid book entrypoint");
-                book_entry_t *book = epub_add_book_entry();
-                LOG_DBG("Created, book entry, filling...");
-                book->number = found;
-                // File found, add it to the list
-                book->entry_point = strdup(assumed_path);
-                book->root_dir = strdup(top_level_path);
-                sd_card_close(&f_entry);
-                found++;
-            }
+            LOG_DBG("Found valid book entrypoint");
+            book_entry_t *book = epub_add_book_entry();
+            LOG_DBG("Created, book entry, filling...");
+            book->number = found;
+            // File found, add it to the list
+            book->entry_point = strdup(assumed_path);
+            book->root_dir = strdup(token);
+            sd_close(&f_entry);
+            found++;
         }
+
         token = strtok(NULL, "\n");
     }
     return ret;
@@ -201,7 +181,8 @@ char *epub_content_opf_metadata_get_element(const char *search_tag, const char *
     char read_buffer[file_read_size];
     uint16_t len_search_tag = strlen(search_tag) + 2;
 
-    sd_card_open_read_close(chapter_filename, read_buffer, &file_read_size);
+    size_t offset = 0;
+    sd_read_chunk(chapter_filename, &offset, read_buffer, &file_read_size);
 
     char *token = strtok(read_buffer, delim);
     while (token)
@@ -259,7 +240,7 @@ int epub_parse_chapter_files(const char *content_opf)
 
     while (read_size == 800)
     {
-        ret = sd_card_open_read_at_offset_close(content_opf, &offset, buf, &read_size);
+        ret = sd_read_chunk(content_opf, &offset, buf, &read_size);
         if (ret)
         {
             LOG_ERR("Could parse chapters!");
@@ -363,7 +344,7 @@ int epub_get_prev_chapter()
         {
             // TODO does not work as expected right now
             LOG_DBG("Opening previous file %s", current_book->current_chapter->chapter->path);
-            sd_card_tell_end_offset(current_book->current_chapter->chapter->path, &current_book->state.file_offset);
+            sd_tell_end_offset(current_book->current_chapter->chapter->path, &current_book->state.file_offset);
             LOG_DBG("End offset of the prev chapter: %d", current_book->state.file_offset);
             current_book->state.file_offset -= (EPUB_PAGE_SIZE - 1);
         }
@@ -375,8 +356,8 @@ int epub_parse_next_page()
     size_t read_size = (EPUB_PAGE_SIZE - 1);
     LOG_DBG("Current offset: %d", current_book->state.file_offset);
 
-    int ret = sd_card_open_read_at_offset_close(current_book->current_chapter->chapter->path, &current_book->state.file_offset,
-                                                current_book->page, &read_size);
+    int ret = sd_read_chunk(current_book->current_chapter->chapter->path, &current_book->state.file_offset,
+                            current_book->page, &read_size);
     current_book->page[read_size] = 0;
 
     LOG_DBG("%s", current_book->page);
@@ -420,8 +401,8 @@ int epub_parse_prev_page()
 
     LOG_DBG("Opening prev page at offset :%d", current_book->state.file_offset);
 
-    int ret = sd_card_open_read_at_offset_close(current_book->current_chapter->chapter->path, &current_book->state.file_offset,
-                                                current_book->page, &read_size);
+    int ret = sd_read_chunk(current_book->current_chapter->chapter->path, &current_book->state.file_offset,
+                            current_book->page, &read_size);
     current_book->page[read_size] = 0;
     LOG_DBG("%s", current_book->page);
 
@@ -469,7 +450,7 @@ int epub_initialize()
     int ret = 0;
 
     LOG_DBG("Init SD card");
-    ret = sd_card_init();
+    ret = sd_initialize();
     if (ret)
     {
         LOG_ERR("Initializing the SD card failed");
