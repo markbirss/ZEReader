@@ -22,9 +22,10 @@ static struct fs_mount_t mount_point = {
     .fs_data = &fat_fs,
 };
 
-char *sd_build_full_path(const char *filename, int *error)
+char *sd_build_full_path(const char *folder, const char *filename, int *error)
 {
-    uint32_t path_len = strlen(filename) + strlen(sd_rootpath);
+    char *fullpath = NULL;
+    uint32_t path_len = strlen(sd_rootpath) + strlen(folder) + strlen(filename);
 
     if (path_len > CONFIG_FS_FATFS_MAX_LFN)
     {
@@ -33,7 +34,7 @@ char *sd_build_full_path(const char *filename, int *error)
         return NULL;
     }
 
-    char *fullpath = (char *)malloc(path_len + 1);
+    fullpath = (char *)malloc(path_len + 1);
     if (fullpath == NULL)
     {
         LOG_ERR("Could not allocate any memory!");
@@ -41,8 +42,9 @@ char *sd_build_full_path(const char *filename, int *error)
         return NULL;
     }
 
-    fullpath[path_len] = 0;
-    memcpy(fullpath, sd_rootpath, strlen(sd_rootpath) + 1);
+    memset(fullpath, 0, path_len + 1);
+    memcpy(fullpath, sd_rootpath, strlen(sd_rootpath));
+    strncat(fullpath, folder, strlen(folder));
     strncat(fullpath, filename, strlen(filename));
 
     LOG_DBG("Full path: %s", fullpath);
@@ -91,20 +93,13 @@ int sd_initialize(void)
     return 0;
 }
 
-int sd_open(char const *const filename, struct fs_file_t *f_obj)
+int sd_open(char const *const path, struct fs_file_t *f_obj)
 {
     int ret;
 
-    char *full_path = sd_build_full_path(filename, &ret);
-    if (ret < 0)
-    {
-        LOG_ERR("Could not get full filepath!");
-        return ret;
-    }
-
     fs_file_t_init(f_obj);
 
-    ret = fs_open(f_obj, full_path, FS_O_READ);
+    ret = fs_open(f_obj, path, FS_O_READ);
     if (ret)
     {
         LOG_ERR("Could not open file: %d", ret);
@@ -143,21 +138,14 @@ int sd_read(struct fs_file_t *f_obj, char *buffer, size_t *size)
     return 0;
 }
 
-int sd_read_chunk(char const *const filename, size_t *offset, char *const buffer, size_t *size)
+int sd_read_chunk(char const *const path, size_t *offset, char *const buffer, size_t *size)
 {
     int ret;
     struct fs_file_t f_obj;
 
-    char *full_path = sd_build_full_path(filename, &ret);
-    if (ret < 0)
-    {
-        LOG_ERR("Could not get full filepath!");
-        return ret;
-    };
-
     fs_file_t_init(&f_obj);
 
-    ret = fs_open(&f_obj, full_path, FS_O_READ);
+    ret = fs_open(&f_obj, path, FS_O_READ);
     if (ret)
     {
         LOG_ERR("Could not open file: %d", ret);
@@ -196,23 +184,15 @@ int sd_read_chunk(char const *const filename, size_t *offset, char *const buffer
     return 0;
 }
 
-int sd_tell_end_offset(char const *const filename, size_t *offset)
+int sd_tell_end_offset(char const *const path, size_t *offset)
 {
     int ret;
     struct fs_file_t f_obj;
+    fs_file_t_init(&f_obj);
 
     *offset = 0;
 
-    char *full_path = sd_build_full_path(filename, &ret);
-    if (ret < 0)
-    {
-        LOG_ERR("Could not get full filepath!");
-        return ret;
-    }
-
-    fs_file_t_init(&f_obj);
-
-    ret = fs_open(&f_obj, full_path, FS_O_READ);
+    ret = fs_open(&f_obj, path, FS_O_READ);
     if (ret)
     {
         LOG_ERR("Could not open file: %d", ret);
@@ -239,21 +219,13 @@ int sd_tell_end_offset(char const *const filename, size_t *offset)
 }
 
 // int sd_write();
-int sd_write_chunk(char const *const filename, char const *const data, size_t *size)
+int sd_write_chunk(char const *const path, char const *const data, size_t *size)
 {
     int ret;
     struct fs_file_t f_obj;
-
-    char *full_path = sd_build_full_path(filename, &ret);
-    if (ret < 0)
-    {
-        LOG_ERR("Could not get full filepath!");
-        return ret;
-    }
-
     fs_file_t_init(&f_obj);
 
-    ret = fs_open(&f_obj, full_path, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
+    ret = fs_open(&f_obj, path, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
     if (ret)
     {
         LOG_ERR("Could not create/open file: %d", ret);
@@ -287,7 +259,7 @@ int sd_write_chunk(char const *const filename, char const *const data, size_t *s
     return 0;
 }
 
-int sd_list_directories(char const *const search_path, char *buffer, size_t *buffer_size)
+int sd_list_directories(char const *const path, char *buffer, size_t *buffer_size)
 {
     int ret;
 
@@ -295,19 +267,12 @@ int sd_list_directories(char const *const search_path, char *buffer, size_t *buf
     static struct fs_dirent entry;
     size_t used = 0;
 
-    char *full_path = sd_build_full_path(search_path, &ret);
-    if (ret < 0)
-    {
-        LOG_ERR("Could not get full filepath!");
-        return ret;
-    }
-
     fs_dir_t_init(&dir_obj);
 
-    ret = fs_opendir(&dir_obj, full_path);
+    ret = fs_opendir(&dir_obj, path);
     if (ret)
     {
-        LOG_ERR("Open directory %s failed!", full_path);
+        LOG_ERR("Open directory %s failed!", path);
         return ret;
     }
 
@@ -349,7 +314,7 @@ int sd_list_directories(char const *const search_path, char *buffer, size_t *buf
     ret = fs_closedir(&dir_obj);
     if (ret)
     {
-        LOG_ERR("Could not close directory %s", full_path);
+        LOG_ERR("Could not close directory %s", path);
         return ret;
     }
 

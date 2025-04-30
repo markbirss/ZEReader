@@ -114,6 +114,138 @@ chapter_list_t *epub_get_chapter_list()
     return current_book->chapter_list;
 }
 
+char *epub_content_opf_metadata_get_element(const char *search_tag, const char *filename,
+                                            size_t file_read_size)
+{
+    char *delim = ">";
+    char read_buffer[file_read_size];
+    uint16_t len_search_tag = strlen(search_tag) + 2;
+
+    size_t offset = 0;
+    sd_read_chunk(filename, &offset, read_buffer, &file_read_size);
+
+    char *token = strtok(read_buffer, delim);
+    while (token)
+    {
+        if (strstr(token, search_tag) != 0)
+        {
+            token = strtok(NULL, delim);
+            token[strlen(token) - len_search_tag] = 0;
+            return token;
+        }
+
+        token = strtok(NULL, delim);
+    }
+}
+
+char *epub_container_xml_get_rootpath(const char *folder, const char *filepath)
+{
+    size_t read_size = 350;
+    char *delim = " ";
+    char buffer[read_size];
+
+    size_t offset = 0;
+    sd_read_chunk(filepath, &offset, buffer, &read_size);
+
+    char *token = strtok(buffer, delim);
+    while (token)
+    {
+        if (strstr(token, "full-path") != 0)
+        {
+            LOG_DBG("Token: %s", token);
+
+            char *rootpath = (char *)malloc(5 + strlen(token) - 12 + strlen(folder) + 1);
+            // memset(rootpath, 0, sizeof(rootpath));
+            memcpy(rootpath, "/SD:/", 5);
+            strncat(rootpath, folder, strlen(folder));
+            strncat(rootpath, "/", 1);
+            strncat(rootpath, token + 11, strlen(token) - 12);
+
+            return rootpath;
+        }
+        token = strtok(NULL, delim);
+    }
+    return NULL;
+}
+
+int epub_get_epub_rootfiles()
+{
+    int ret;
+    int found = 0;
+
+    char *container_xml = "/META-INF/container.xml";
+    char *book_path;
+    char *rootpath;
+
+    struct fs_dir_t dir_obj;
+    static struct fs_dirent entry;
+
+    fs_dir_t_init(&dir_obj);
+
+    ret = fs_opendir(&dir_obj, "/SD:/");
+    if (ret)
+    {
+        LOG_ERR("Open root directory failed!");
+        return ret;
+    }
+
+    while (true)
+    {
+        ret = fs_readdir(&dir_obj, &entry);
+        if (ret)
+        {
+            LOG_DBG("Could not read directory");
+            return ret;
+        }
+
+        if (entry.name[0] == 0)
+        {
+            break;
+        }
+
+        if (entry.type == FS_DIR_ENTRY_DIR)
+        {
+            struct fs_file_t f_obj;
+
+            // Found folder, test if META-INF/container.xml exists
+            uint32_t path_len = strlen(entry.name) + strlen(container_xml + 1);
+            book_path = sd_build_full_path(entry.name, container_xml, &ret);
+
+            ret = sd_open(book_path, &f_obj);
+            if (ret == 0)
+            {
+                LOG_DBG("Found valid book %s", book_path);
+
+                rootpath = epub_container_xml_get_rootpath(entry.name, book_path);
+                if (rootpath != NULL)
+                {
+                    LOG_DBG("Found rootfile path: %s", rootpath);
+
+                    book_entry_t *book = epub_add_book_entry();
+                    book->number = found;
+                    book->entry_point = strdup(rootpath);
+                    book->root_dir = strdup(entry.name);
+
+                    sd_close(&f_obj);
+
+                    found++;
+                }
+            }
+        }
+
+        LOG_DBG("[%s] %s", entry.type == FS_DIR_ENTRY_DIR ? "DIR " : "FILE", entry.name);
+    }
+
+    ret = fs_closedir(&dir_obj);
+    if (ret)
+    {
+        LOG_ERR("Could not close root directory");
+        return ret;
+    }
+
+    return 0;
+}
+
 // This implementation is a first compromise in terms of time, effort and memory/search time optimization.
 // Usually, the starting point (rootfile) of an ePub is called content.opf and located in the OEBPS
 // directory. Both, the file name and the location are not required, but commonly used.
@@ -172,30 +304,6 @@ int epub_get_entry_points()
         token = strtok(NULL, "\n");
     }
     return ret;
-}
-
-char *epub_content_opf_metadata_get_element(const char *search_tag, const char *chapter_filename,
-                                            size_t file_read_size)
-{
-    char *delim = ">";
-    char read_buffer[file_read_size];
-    uint16_t len_search_tag = strlen(search_tag) + 2;
-
-    size_t offset = 0;
-    sd_read_chunk(chapter_filename, &offset, read_buffer, &file_read_size);
-
-    char *token = strtok(read_buffer, delim);
-    while (token)
-    {
-        if (strstr(token, search_tag) != 0)
-        {
-            token = strtok(NULL, delim);
-            token[strlen(token) - len_search_tag] = 0;
-            return token;
-        }
-
-        token = strtok(NULL, delim);
-    }
 }
 
 void epub_get_authors_and_titles()
@@ -268,8 +376,9 @@ int epub_parse_chapter_files(const char *content_opf)
                 else if (path_len < EPUB_FILE_LEN_MAX && path_len > 0)
                 {
                     chapter_entry_t *chapter = epub_add_chapter_entry();
-                    chapter->path = (char *)malloc((sizeof(current_book->root_dir) + 7 + path_len) * sizeof(char));
-                    strcpy(chapter->path, current_book->root_dir);
+                    chapter->path = (char *)malloc((5 + sizeof(current_book->root_dir) + 7 + path_len) * sizeof(char));
+                    strcpy(chapter->path, "/SD:/");
+                    strcat(chapter->path, current_book->root_dir);
                     strcat(chapter->path, "/OEBPS/");
                     strncat(chapter->path, path, path_len);
                     chapter->number = current_book->num_chapters;
@@ -457,13 +566,8 @@ int epub_initialize()
         return ret;
     }
 
-    LOG_DBG("Get entry points");
-    // ret =
-    epub_get_entry_points();
-    // if (ret) {
-    //     LOG_ERR("Parse EBOOK entry points failed");
-    //     return ret;
-    // }
+    LOG_DBG("Get E-Book rootfiles.");
+    epub_get_epub_rootfiles();
 
     LOG_DBG("Get authors and titles");
     // ret =
