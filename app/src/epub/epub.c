@@ -405,6 +405,70 @@ bool is_html(char *path)
     return strstr(path, "html");
 }
 
+int epub_prettify_page()
+{
+    char *delim = ">\n";
+
+    char *token = strtok(current_book->page, delim);
+    while (token)
+    {
+        // LOG_DBG("Token: %s", token);
+
+        // Handle <p *> </p>
+        if (strstr(token, "</p") != 0)
+        {
+            strncat(current_book->pretty_page, token, strlen(token) - 3);
+            strcat(current_book->pretty_page, "\n");
+        }
+
+        if (strstr(token, "</span") != 0)
+        {
+            strncat(current_book->pretty_page, token, strlen(token) - 6);
+        }
+
+        if (strstr(token, "</em") != 0)
+        {
+            strncat(current_book->pretty_page, token, strlen(token) - 4);
+        }
+
+        if (strstr(token, "</a") != 0)
+        {
+            strncat(current_book->pretty_page, token, strlen(token) - 3);
+        }
+
+        if (strstr(token, "<br/") != 0)
+        {
+            strcat(current_book->pretty_page, "\n");
+        }
+
+        // h1, h2, ...
+        // Just using </h does not work as </head would also be found and result in strange artifacts
+        if (strstr(token, "</h1") != 0)
+        {
+            if (strlen(token) > 4)
+            {
+                strncat(current_book->pretty_page, token, strlen(token) - 4);
+            }
+
+            strcat(current_book->pretty_page, "\n\n");
+        }
+
+        if (strstr(token, "</h2") != 0)
+        {
+            if (strlen(token) > 4)
+            {
+                strncat(current_book->pretty_page, token, strlen(token) - 4);
+            }
+
+            strcat(current_book->pretty_page, "\n\n");
+        }
+
+        token = strtok(NULL, delim);
+    }
+
+    return 0;
+}
+
 int epub_get_next_chapter()
 {
     current_book->state.file_offset = 0;
@@ -460,7 +524,7 @@ int epub_get_prev_chapter()
     }
 }
 
-int epub_parse_next_page()
+int epub_fetch_next_page_chunk()
 {
     size_t read_size = (EPUB_PAGE_SIZE - 1);
     LOG_DBG("Current offset: %d", current_book->state.file_offset);
@@ -483,15 +547,18 @@ int epub_parse_next_page()
 char *epub_get_next_page()
 {
 
-    if (epub_parse_next_page() == 0)
+    if (epub_fetch_next_page_chunk() == 0)
     {
-        return current_book->page;
+        memset(current_book->pretty_page, 0, sizeof(current_book->pretty_page));
+        epub_prettify_page();
+        LOG_DBG("Pretty page: %s", current_book->pretty_page);
+        return current_book->pretty_page;
     }
     LOG_DBG("Can't get page");
     return "";
 }
 
-int epub_parse_prev_page()
+int epub_fetch_prev_page_chunk()
 {
     size_t read_size = (EPUB_PAGE_SIZE - 1);
     if (current_book->state.file_offset > (2 * read_size))
@@ -527,9 +594,12 @@ int epub_parse_prev_page()
 char *epub_get_prev_page()
 {
 
-    if (epub_parse_prev_page() == 0)
+    if (epub_fetch_prev_page_chunk() == 0)
     {
-        return current_book->page;
+        memset(current_book->pretty_page, 0, sizeof(current_book->pretty_page));
+        epub_prettify_page();
+        LOG_DBG("Pretty page: %s", current_book->pretty_page);
+        return current_book->pretty_page;
     }
     LOG_DBG("Can't get page");
     return "";

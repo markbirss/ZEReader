@@ -36,6 +36,7 @@ typedef struct {
     chapter_list_t *chapter_list;
     chapter_list_t *current_chapter;
     char page[EPUB_PAGE_SIZE];
+    char pretty_page[EPUB_PAGE_SIZE];
     char *chapter_filename;
     char *root_dir;
 

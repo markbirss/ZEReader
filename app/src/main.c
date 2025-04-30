@@ -38,13 +38,18 @@ int main(void)
 		return 0;
 	}
 
+	zereader_show_logo();
+
+	display_blanking_off(display_dev);
+	lv_timer_handler();
+
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
 	zereader_clean_page();
-	zereader_show_logo();
-
 
 	epub_initialize();
+
+	zereader_clean_page();
 
 	LOG_DBG("######### Listing available books #########");
 	book_list_t *books = epub_get_book_list();
@@ -57,9 +62,8 @@ int main(void)
 	
 
 	// Testing
-	epub_open_book(epub_get_book_entry(2));
+	epub_open_book(epub_get_book_entry(3));
 
-	display_blanking_off(display_dev);
 	lv_timer_handler();
 
 	while (1)
