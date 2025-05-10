@@ -119,7 +119,7 @@ char *epub_content_opf_metadata_get_element(const char *search_tag, const char *
 {
     char *delim = ">";
     char read_buffer[file_read_size];
-    uint16_t len_search_tag = strlen(search_tag) + 2;
+    uint16_t len_search_tag = strlen(search_tag);
 
     size_t offset = 0;
     sd_read_chunk(filename, &offset, read_buffer, &file_read_size);
@@ -129,7 +129,6 @@ char *epub_content_opf_metadata_get_element(const char *search_tag, const char *
     {
         if (strstr(token, search_tag) != 0)
         {
-            token = strtok(NULL, delim);
             token[strlen(token) - len_search_tag] = 0;
             return token;
         }
@@ -309,8 +308,8 @@ int epub_get_entry_points()
 void epub_get_authors_and_titles()
 {
     size_t file_read_size = 800;
-    const char *search_creator = "dc:creator";
-    const char *search_title = "dc:title";
+    const char *search_creator = "</dc:creator";
+    const char *search_title = "</dc:title";
     char *element;
 
     book_list_t *current_elem = book_list;
