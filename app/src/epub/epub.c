@@ -420,6 +420,12 @@ int epub_prettify_page()
             strcat(current_book->pretty_page, "\n");
         }
 
+        if (strstr(token, "</div") != 0)
+        {
+            strncat(current_book->pretty_page, token, strlen(token) - 5);
+            strcat(current_book->pretty_page, "\n");
+        }
+
         if (strstr(token, "</span") != 0)
         {
             strncat(current_book->pretty_page, token, strlen(token) - 6);
@@ -430,12 +436,28 @@ int epub_prettify_page()
             strncat(current_book->pretty_page, token, strlen(token) - 4);
         }
 
+        // Not meaningful for the most books
+        // if (strstr(token, "</title") != 0)
+        // {
+        //     strncat(current_book->pretty_page, token, strlen(token) - 7);
+        // }
+
         if (strstr(token, "</a") != 0)
         {
             strncat(current_book->pretty_page, token, strlen(token) - 3);
         }
 
+        if (strstr(token, "</i") != 0)
+        {
+            strncat(current_book->pretty_page, token, strlen(token) - 3);
+        }
+
         if (strstr(token, "<br/") != 0)
+        {
+            strcat(current_book->pretty_page, "\n");
+        }
+        
+        if (strstr(token, "</li") != 0)
         {
             strcat(current_book->pretty_page, "\n");
         }
