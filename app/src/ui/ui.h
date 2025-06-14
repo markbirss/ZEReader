@@ -3,8 +3,11 @@
 
 #include <lvgl.h>
 #include <lvgl_input_device.h>
+#include <zephyr/drivers/display.h>
 
 #include "context.h"
+
+extern const struct device *display_dev;
 
 extern lv_obj_t *button_left;
 extern lv_obj_t *button_mid;

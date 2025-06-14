@@ -17,7 +17,7 @@ manifest:
 
       import:
         name-allowlist:
-          - cmsis
+          - cmsis_6
           - fatfs
           - hal_rpi_pico
           - lvgl

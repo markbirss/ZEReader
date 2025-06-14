@@ -5,9 +5,6 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/kernel.h>
 
-#include <lvgl.h>
-#include <lvgl_input_device.h>
-
 #include "epub/epub.h"
 #include "ui/ui.h"
 
@@ -21,7 +18,7 @@ int main(void)
 
 	// Initialize the choosen zephyr,display device
 	// -> Make the device tree description available for the software part
-	const struct device *display_dev;
+	
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev))
 	{
@@ -39,16 +36,13 @@ int main(void)
 	}
 
 	zereader_show_logo();
-
-	display_blanking_off(display_dev);
 	lv_timer_handler();
 
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
-	zereader_clean_page();
+	display_blanking_off(display_dev);
 
 	epub_initialize();
-
 	zereader_clean_page();
 
 	LOG_DBG("######### Listing available books #########");

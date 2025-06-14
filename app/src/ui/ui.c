@@ -5,6 +5,8 @@
 
 LOG_MODULE_REGISTER(ui, CONFIG_ZEREADER_LOG_LEVEL);
 
+const struct device *display_dev;
+
 lv_obj_t *button_4;
 lv_obj_t *button_3;
 lv_obj_t *button_2;
@@ -110,7 +112,7 @@ void zereader_setup_page()
 	// lv_textarea_set_max_length(text_area, 400);
 	lv_obj_set_x(text_area, 10);
 	lv_obj_set_y(text_area, 20);
-	lv_obj_set_width(text_area, 750);
+	lv_obj_set_width(text_area, 780);
 	lv_obj_set_height(text_area, 440);
 	// LOG_DBG("Text area length: %d", lv_textarea_get_max_length(text_area));
 }
@@ -128,9 +130,12 @@ void zereader_print_prev_page()
 
 void zereader_clean_page()
 {
-	lv_obj_invalidate(lv_screen_active());
-	lv_obj_del(logo);
+	zereader_clean_logo();
 	lv_textarea_set_text(text_area, " ");
+	lv_obj_invalidate(lv_screen_active());
+	lv_timer_handler();
+	display_blanking_on(display_dev);
+	display_blanking_off(display_dev);
 }
 
 void zereader_show_logo()
@@ -147,5 +152,6 @@ void zereader_clean_logo()
 	{
 		lv_obj_del(logo);
 		logo = NULL;
+		// lv_timer_handler();
 	}
 }
