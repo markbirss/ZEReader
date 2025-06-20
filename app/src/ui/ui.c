@@ -4,6 +4,7 @@
 #include "../epub/epub.h"
 
 LOG_MODULE_REGISTER(ui, CONFIG_ZEREADER_LOG_LEVEL);
+LV_FONT_DECLARE(notoserif_14);
 
 const struct device *display_dev;
 
@@ -22,6 +23,8 @@ lv_obj_t *logo;
 
 void zereader_print_prev_page();
 void zereader_print_next_page();
+
+static lv_style_t font_style;
 
 static void button_1_clicked_cb(lv_event_t *e)
 {
@@ -59,11 +62,9 @@ static void button_4_clicked_cb(lv_event_t *e)
 
 void zereader_setup_control_buttons(context_t *context)
 {
-	lv_obj_set_style_text_color(lv_screen_active(), lv_color_white(), LV_PART_MAIN);
-
 	LOG_DBG("Button Setup");
 	button_1 = lv_button_create(lv_screen_active());
-	// lv_obj_add_style(button_left, &style_default, 0);
+	lv_obj_add_style(button_1, &font_style, 0);
 	LOG_DBG("Button created");
 	lv_obj_align(button_1, LV_ALIGN_BOTTOM_LEFT, 10, -5);
 	LOG_DBG("Button aligned");
@@ -75,7 +76,7 @@ void zereader_setup_control_buttons(context_t *context)
 	lv_obj_center(button_1_label);
 
 	button_2 = lv_button_create(lv_screen_active());
-	// lv_obj_add_style(button_mid, &style_default, 0);
+	lv_obj_add_style(button_2, &font_style, 0);
 	lv_obj_align(button_2, LV_ALIGN_BOTTOM_MID, -50, -5);
 	lv_obj_add_event_cb(button_2, button_2_clicked_cb, LV_EVENT_CLICKED, context);
 
@@ -84,7 +85,7 @@ void zereader_setup_control_buttons(context_t *context)
 	lv_obj_center(button_2_label);
 
 	button_3 = lv_button_create(lv_screen_active());
-	// lv_obj_add_style(button_right, &style_default, 0);
+	lv_obj_add_style(button_3, &font_style, 0);
 	lv_obj_align(button_3, LV_ALIGN_BOTTOM_MID, 50, -5);
 	lv_obj_add_event_cb(button_3, button_3_clicked_cb, LV_EVENT_CLICKED, context);
 
@@ -93,7 +94,7 @@ void zereader_setup_control_buttons(context_t *context)
 	lv_obj_center(button_3_label);
 
 	button_4 = lv_button_create(lv_screen_active());
-	// lv_obj_add_style(button_right, &style_default, 0);
+	lv_obj_add_style(button_4, &font_style, 0);
 	lv_obj_align(button_4, LV_ALIGN_BOTTOM_RIGHT, -10, -5);
 	lv_obj_add_event_cb(button_4, button_4_clicked_cb, LV_EVENT_CLICKED, context);
 
@@ -105,7 +106,11 @@ void zereader_setup_control_buttons(context_t *context)
 void zereader_setup_page()
 {
 	LOG_DBG("Setup page");
+	lv_style_init(&font_style);
+	lv_style_set_text_font(&font_style, &notoserif_14);
+
 	text_area = lv_textarea_create(lv_screen_active());
+	lv_obj_add_style(text_area, &font_style, 0);
 	LOG_DBG("Created page label");
 	// lv_obj_align(text_area, LV_ALIGN_TOP_LEFT, 10, 20);
 	// LOG_DBG("Aligned page label");

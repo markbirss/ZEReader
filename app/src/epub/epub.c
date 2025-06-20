@@ -257,53 +257,53 @@ int epub_get_epub_rootfiles()
 // this naive approach is choosen to start with.
 // https://www.w3.org/TR/epub-33/#sec-container-metainf
 // https://cdn.standards.iteh.ai/samples/53255/6fd3b6154cf04b2da069a604a4bb76d8/ISO-IEC-TS-30135-1-2014.pdf
-int epub_get_entry_points()
-{
+// int epub_get_entry_points()
+// {
 
-    uint16_t found = 0;
-    int ret = 0;
+//     uint16_t found = 0;
+//     int ret = 0;
 
-    // Recursively searching content.opf files from SD card root is a memory efficiency nightmare
-    // Instead, get top level folders and start searching the content.opf from there.
-    char assumed_location[] = "/OEBPS/content.opf\0";
+//     // Recursively searching content.opf files from SD card root is a memory efficiency nightmare
+//     // Instead, get top level folders and start searching the content.opf from there.
+//     char assumed_location[] = "/OEBPS/content.opf\0";
 
-    size_t max_ls_content_size = EPUB_LSDIR_CHARS_MAX;
-    char top_level_content[max_ls_content_size];
-    ret = sd_list_directories(NULL, top_level_content, &max_ls_content_size);
-    if (ret != 0)
-    {
-        LOG_ERR("Listing top level files failed");
-        return ret;
-    }
+//     size_t max_ls_content_size = EPUB_LSDIR_CHARS_MAX;
+//     char top_level_content[max_ls_content_size];
+//     ret = sd_list_directories(NULL, top_level_content, &max_ls_content_size);
+//     if (ret != 0)
+//     {
+//         LOG_ERR("Listing top level files failed");
+//         return ret;
+//     }
 
-    char *token = strtok(top_level_content, "\n");
-    while (token)
-    {
-        char assumed_path[EPUB_FILE_LEN_MAX] = {0};
-        strncat(assumed_path, token, strlen(token));
-        strncat(assumed_path, assumed_location, strlen(assumed_location));
+//     char *token = strtok(top_level_content, "\n");
+//     while (token)
+//     {
+//         char assumed_path[EPUB_FILE_LEN_MAX] = {0};
+//         strncat(assumed_path, token, strlen(token));
+//         strncat(assumed_path, assumed_location, strlen(assumed_location));
 
-        struct fs_file_t f_entry;
-        fs_file_t_init(&f_entry);
+//         struct fs_file_t f_entry;
+//         fs_file_t_init(&f_entry);
 
-        ret = sd_open(assumed_path, &f_entry);
-        if (ret == 0)
-        {
-            LOG_DBG("Found valid book entrypoint");
-            book_entry_t *book = epub_add_book_entry();
-            LOG_DBG("Created, book entry, filling...");
-            book->number = found;
-            // File found, add it to the list
-            book->entry_point = strdup(assumed_path);
-            book->root_dir = strdup(token);
-            sd_close(&f_entry);
-            found++;
-        }
+//         ret = sd_open(assumed_path, &f_entry);
+//         if (ret == 0)
+//         {
+//             LOG_DBG("Found valid book entrypoint");
+//             book_entry_t *book = epub_add_book_entry();
+//             LOG_DBG("Created, book entry, filling...");
+//             book->number = found;
+//             // File found, add it to the list
+//             book->entry_point = strdup(assumed_path);
+//             book->root_dir = strdup(token);
+//             sd_close(&f_entry);
+//             found++;
+//         }
 
-        token = strtok(NULL, "\n");
-    }
-    return ret;
-}
+//         token = strtok(NULL, "\n");
+//     }
+//     return ret;
+// }
 
 void epub_get_authors_and_titles()
 {
