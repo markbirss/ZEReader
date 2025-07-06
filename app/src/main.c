@@ -14,11 +14,8 @@ int main(void)
 {
 	LOG_DBG("Hello World - ZEReader! %s\n", CONFIG_BOARD_TARGET);
 
-	context_t context = MENU;
-
 	// Initialize the choosen zephyr,display device
 	// -> Make the device tree description available for the software part
-	
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev))
 	{
@@ -35,25 +32,15 @@ int main(void)
 		return 0;
 	}
 
-	zereader_show_logo();
-	lv_timer_handler();
-
+	context_t context = READING;
 	zereader_setup_page();
 	zereader_setup_control_buttons(&context);
+	zereader_show_logo();
+	lv_timer_handler();
 	display_blanking_off(display_dev);
 
 	epub_initialize();
 	zereader_clean_page();
-
-	LOG_DBG("######### Listing available books #########");
-	book_list_t *books = epub_get_book_list();
-	while (books != NULL)
-	{
-		LOG_DBG("NR: %d - %s - %s - %s - %s", books->book->number, books->book->title, books->book->author, books->book->root_dir, books->book->entry_point);
-		books = books->next;
-	}
-	LOG_DBG("##########################################");
-	
 
 	// Testing
 	epub_open_book(epub_get_book_entry(2));
