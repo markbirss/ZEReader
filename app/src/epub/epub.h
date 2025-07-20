@@ -6,6 +6,8 @@
 #define EPUB_LSDIR_CHARS_MAX 4096
 #define EPUB_PAGE_SIZE 1400
 
+#define STATE_FILE "/SD:/.statefile"
+
 
 typedef struct {
     size_t number;
@@ -56,11 +58,16 @@ int epub_initialize();
 
 book_list_t *epub_get_book_list();
 
-book_entry_t *epub_get_book_entry(uint16_t number);
+book_entry_t *epub_get_book_entry_for_num(uint16_t number);
+book_entry_t *epub_get_book_entry_for_title(char* title);
 int epub_open_book(book_entry_t *book);
+int epub_restore_book();
 
 char* epub_get_prev_page();
 char* epub_get_next_page();
+
+int epub_write_current_book_state();
+void epub_get_current_book_state();
 
 
 #endif

@@ -42,8 +42,13 @@ int main(void)
 	epub_initialize();
 	zereader_clean_page();
 
+	epub_restore_book();
+	zereader_print_current_page();
+
+
 	// Testing
-	epub_open_book(epub_get_book_entry(2));
+	// epub_open_book(epub_get_book_entry(2));
+
 
 	lv_timer_handler();
 

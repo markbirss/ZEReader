@@ -48,8 +48,10 @@ static void book_roller_event_handler(lv_event_t *e)
 		lv_label_set_text(button_4_label, "next");
 		lv_obj_del(book_roller);
 		book_roller = NULL;
-		epub_open_book(epub_get_book_entry(book_nr));
+		epub_open_book(epub_get_book_entry_for_num(book_nr));
 		zereader_print_next_page();
+		epub_write_current_book_state();
+		// epub_get_current_book_state();
 	}
 }
 
@@ -95,6 +97,8 @@ static void button_1_clicked_cb(lv_event_t *e)
 	if (*context == READING)
 	{
 		zereader_print_prev_page();
+		epub_write_current_book_state();
+		// epub_get_current_book_state();
 	}
 	else if (*context == MENU)
 	{
@@ -160,6 +164,8 @@ static void button_4_clicked_cb(lv_event_t *e)
 	if (*context == READING)
 	{
 		zereader_print_next_page();
+		epub_write_current_book_state();
+		// epub_get_current_book_state();
 	}
 	else if (*context == MENU)
 	{
@@ -229,7 +235,7 @@ void zereader_setup_page()
 	page_ctr = 0;
 }
 
-void screen_health_check()
+void screen_health()
 {
 	page_ctr++;
 
@@ -243,15 +249,23 @@ void screen_health_check()
 
 void zereader_print_next_page()
 {
-	screen_health_check();
 	lv_textarea_set_text(text_area, epub_get_next_page());
 	//lv_textarea_add_text(text_area, epub_get_next_page());
+	screen_health();
+}
+
+void zereader_print_current_page()
+{
+	epub_get_prev_page();
+	lv_textarea_set_text(text_area, epub_get_next_page());
+	//lv_textarea_add_text(text_area, epub_get_next_page());
+	screen_health();
 }
 
 void zereader_print_prev_page()
 {
-	screen_health_check();
 	lv_textarea_set_text(text_area, epub_get_prev_page());
+	screen_health();
 }
 
 void zereader_clean_page()

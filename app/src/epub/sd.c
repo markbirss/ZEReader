@@ -225,7 +225,7 @@ int sd_write_chunk(char const *const path, char const *const data, size_t *size)
     struct fs_file_t f_obj;
     fs_file_t_init(&f_obj);
 
-    ret = fs_open(&f_obj, path, FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
+    ret = fs_open(&f_obj, path, FS_O_CREATE | FS_O_WRITE); //| FS_O_APPEND
     if (ret)
     {
         LOG_ERR("Could not create/open file: %d", ret);
@@ -241,7 +241,7 @@ int sd_write_chunk(char const *const path, char const *const data, size_t *size)
     }
 
     ret = fs_write(&f_obj, data, *size);
-    if (ret)
+    if (ret < 0)
     {
         LOG_ERR("Could not write file : %d", ret);
         return ret;

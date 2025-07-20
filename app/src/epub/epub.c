@@ -52,7 +52,7 @@ book_entry_t *epub_add_book_entry()
     return node->book;
 }
 
-book_entry_t *epub_get_book_entry(uint16_t number)
+book_entry_t *epub_get_book_entry_for_num(uint16_t number)
 {
     book_list_t *current = book_list;
     while (current != NULL)
@@ -66,9 +66,83 @@ book_entry_t *epub_get_book_entry(uint16_t number)
     return NULL;
 }
 
+book_entry_t *epub_get_book_entry_for_title(char *title)
+{
+    book_list_t *current = book_list;
+    while (current != NULL)
+    {
+        if (strcmp(current->book->title, title) == 0)
+        {
+            return current->book;
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+
 book_list_t *epub_get_book_list()
 {
     return book_list;
+}
+
+int epub_write_current_book_state()
+{
+    LOG_DBG("Writing the book's state");
+
+    size_t to_write;
+    char state_string[500];
+    // memset(state_string, 0, 500 * sizeof(state_string[0]));
+
+    sprintf(state_string, "%s\n%d\n%d\n", current_book->state.title, current_book->state.chapter, current_book->state.file_offset);
+    to_write = strlen(state_string);
+
+    int ret = sd_write_chunk(STATE_FILE, state_string, &to_write);
+    if (ret)
+    {
+        LOG_ERR("Writing the book's state file failed!");
+    }
+    return ret;
+}
+
+void epub_get_current_book_state()
+{
+    size_t size = 500;
+    char buf[size];
+    size_t offset = 0;
+
+    char *title;
+    size_t chapter;
+    size_t ofs;
+
+    sd_read_chunk(STATE_FILE, &offset, buf, &size);
+    LOG_DBG("Current state:\n %s", buf);
+
+    char *token = strtok(buf, "\n");
+    if (token != NULL)
+    {
+        title = strdup(token);
+        LOG_DBG("Title: %s", title);
+    }
+
+    token = strtok(NULL, "\n");
+    if (token != NULL)
+    {
+        chapter = strtoul(token, NULL, 10);
+        LOG_DBG("Chapter: %d", chapter);
+    }
+
+    token = strtok(NULL, "\n");
+    if (token != NULL)
+    {
+        ofs = strtoul(token, NULL, 10);
+        LOG_DBG("Offset: %d", ofs);
+    }
+
+    free(current_book);
+    current_book = (current_book_t *)malloc(sizeof(current_book_t));
+    current_book->state.title = strdup(title);
+    current_book->state.chapter = chapter;
+    current_book->state.file_offset = ofs;
 }
 
 chapter_entry_t *epub_add_chapter_entry()
@@ -245,66 +319,6 @@ int epub_get_epub_rootfiles()
     return 0;
 }
 
-// This implementation is a first compromise in terms of time, effort and memory/search time optimization.
-// Usually, the starting point (rootfile) of an ePub is called content.opf and located in the OEBPS
-// directory. Both, the file name and the location are not required, but commonly used.
-// In this case, the file can not be found with the current approach.
-// The most correct approach would be searching for META-INF/container.xml which must be present to
-// fulfill the ePub standard.
-// It contains the relative path in the directory to the rootfile in such a format:
-// <rootfile full-path="OEBPS/e9783641066314_content.opf" media-type="application/oebps-package+xml"/>
-// As this would result in opening and parsing two file to get the relevant information,
-// this naive approach is choosen to start with.
-// https://www.w3.org/TR/epub-33/#sec-container-metainf
-// https://cdn.standards.iteh.ai/samples/53255/6fd3b6154cf04b2da069a604a4bb76d8/ISO-IEC-TS-30135-1-2014.pdf
-// int epub_get_entry_points()
-// {
-
-//     uint16_t found = 0;
-//     int ret = 0;
-
-//     // Recursively searching content.opf files from SD card root is a memory efficiency nightmare
-//     // Instead, get top level folders and start searching the content.opf from there.
-//     char assumed_location[] = "/OEBPS/content.opf\0";
-
-//     size_t max_ls_content_size = EPUB_LSDIR_CHARS_MAX;
-//     char top_level_content[max_ls_content_size];
-//     ret = sd_list_directories(NULL, top_level_content, &max_ls_content_size);
-//     if (ret != 0)
-//     {
-//         LOG_ERR("Listing top level files failed");
-//         return ret;
-//     }
-
-//     char *token = strtok(top_level_content, "\n");
-//     while (token)
-//     {
-//         char assumed_path[EPUB_FILE_LEN_MAX] = {0};
-//         strncat(assumed_path, token, strlen(token));
-//         strncat(assumed_path, assumed_location, strlen(assumed_location));
-
-//         struct fs_file_t f_entry;
-//         fs_file_t_init(&f_entry);
-
-//         ret = sd_open(assumed_path, &f_entry);
-//         if (ret == 0)
-//         {
-//             LOG_DBG("Found valid book entrypoint");
-//             book_entry_t *book = epub_add_book_entry();
-//             LOG_DBG("Created, book entry, filling...");
-//             book->number = found;
-//             // File found, add it to the list
-//             book->entry_point = strdup(assumed_path);
-//             book->root_dir = strdup(token);
-//             sd_close(&f_entry);
-//             found++;
-//         }
-
-//         token = strtok(NULL, "\n");
-//     }
-//     return ret;
-// }
-
 void epub_get_authors_and_titles()
 {
     size_t file_read_size = 800;
@@ -456,7 +470,7 @@ int epub_prettify_page()
         {
             strcat(current_book->pretty_page, "\n");
         }
-        
+
         if (strstr(token, "</li") != 0)
         {
             strcat(current_book->pretty_page, "\n");
@@ -517,15 +531,42 @@ int epub_get_next_chapter()
     }
 }
 
+int epub_get_chapter(size_t index)
+{
+    LOG_DBG("Get chapter");
+    if (current_book->state.chapter >= current_book->num_chapters - 1)
+    {
+        LOG_DBG("Book finished!");
+        return 0;
+    }
+    if (current_book->current_chapter == NULL)
+    {
+        // Set linked list pointer to the first element
+        current_book->current_chapter = current_book->chapter_list;
+    }
+
+    if (index == 0)
+    {
+        return 0;
+    }
+    else
+    {
+        current_book->current_chapter = current_book->current_chapter->next;
+        // current_book->state.chapter++;
+        return epub_get_chapter(index - 1);
+    }
+}
+
 int epub_get_prev_chapter()
 {
+    LOG_DBG("Get prev chapter");
     if (current_book->state.chapter == 0)
     {
         LOG_DBG("Already at the beginning");
         return 0;
     }
 
-    if (current_book->current_chapter->next != NULL)
+    if (current_book->current_chapter->prev != NULL)
     {
         current_book->current_chapter = current_book->current_chapter->prev;
         current_book->state.chapter--;
@@ -540,7 +581,6 @@ int epub_get_prev_chapter()
             LOG_DBG("Opening previous file %s", current_book->current_chapter->chapter->path);
             sd_tell_end_offset(current_book->current_chapter->chapter->path, &current_book->state.file_offset);
             LOG_DBG("End offset of the prev chapter: %d", current_book->state.file_offset);
-            current_book->state.file_offset -= (EPUB_PAGE_SIZE - 1);
         }
     }
 }
@@ -582,18 +622,28 @@ char *epub_get_next_page()
 int epub_fetch_prev_page_chunk()
 {
     size_t read_size = (EPUB_PAGE_SIZE - 1);
-    if (current_book->state.file_offset > (2 * read_size))
-    {
-        current_book->state.file_offset -= 2 * read_size;
-    }
-    else if (current_book->state.file_offset == read_size)
+
+    if (current_book->state.file_offset <= read_size || current_book->state.file_offset < 0)
     {
         LOG_DBG("Open previous chapter");
         epub_get_prev_chapter();
+        if (current_book->state.file_offset > read_size)
+        {
+            size_t end_offset = current_book->state.file_offset % read_size;
+            current_book->state.file_offset -= end_offset;
+        }
+        else
+        {
+            current_book->state.file_offset = 0;
+        }
     }
-    else
+    else if (current_book->state.file_offset <= (2 * read_size))
     {
         current_book->state.file_offset = 0;
+    }
+    else if (current_book->state.file_offset > (2 * read_size))
+    {
+        current_book->state.file_offset -= 2 * read_size;
     }
 
     LOG_DBG("Opening prev page at offset :%d", current_book->state.file_offset);
@@ -602,12 +652,6 @@ int epub_fetch_prev_page_chunk()
                             current_book->page, &read_size);
     current_book->page[read_size] = 0;
     LOG_DBG("%s", current_book->page);
-
-    // if (ret < 0)
-    // {
-    //     LOG_DBG("Open previous chapter");
-    //     epub_get_prev_chapter();
-    // }
 
     return ret;
 }
@@ -643,6 +687,26 @@ int epub_open_book(book_entry_t *book)
 
     epub_parse_chapter_files(book->entry_point);
     epub_get_next_chapter();
+}
+
+int epub_restore_book()
+{
+    book_entry_t *book = NULL;
+
+    epub_get_current_book_state();
+    LOG_DBG("Restore title %s", current_book->state.title);
+    book = epub_get_book_entry_for_title(current_book->state.title);
+
+    current_book->num_chapters = 0;
+    current_book->chapter_list = NULL;
+    current_book->current_chapter = NULL;
+    current_book->chapter_filename = NULL;
+    current_book->root_dir = book->root_dir;
+
+    epub_parse_chapter_files(book->entry_point);
+    epub_get_chapter_entry(current_book->state.chapter);
+
+    epub_get_chapter(current_book->state.chapter);
 }
 
 int epub_initialize()
