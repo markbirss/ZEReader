@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 menu "ZEReader"
 
 config PIXEL_FORMAT_MONO10

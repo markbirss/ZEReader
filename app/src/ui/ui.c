@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
 #include <zephyr/logging/log.h>
 
 #include "ui.h"

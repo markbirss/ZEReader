@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 build
 build*
 
@@ -12,3 +16,4 @@ __pycache__
 /nrf
 /nrfxlib
 /test
+/.vscode/

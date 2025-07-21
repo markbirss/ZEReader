@@ -1,6 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/lvgl/lvgl.h>
-
 
 / {
 

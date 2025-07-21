@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+
 # ZEReader
 ZEReader is a Zephyr based firmware for an open hardware eBook reader approach.
 See https://github.com/Allegra42/ZEReader-KiCad for more information about the hardware design.

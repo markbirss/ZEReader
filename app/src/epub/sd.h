@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
 #ifndef _SD_H_
 #define _SD_H_
 

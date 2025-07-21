@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2022 The Noto Project Authors <https://github.com/notofonts/latin-greek-cyrillic>
+ *
+ * SPDX-License-Identifier: OFL-1.1
+ */
+
 /*******************************************************************************
  * Size: 14 px
  * Bpp: 4
