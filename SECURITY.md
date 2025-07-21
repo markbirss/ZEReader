@@ -15,4 +15,4 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Please report vulnerabilities at zereader-security<at>marx.engineer
+Please report vulnerabilities at zereader-security\<at\>marx.engineer
