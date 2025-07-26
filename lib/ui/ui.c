@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include <app/lib/epub/epub.h>
-#include <app/lib/ui/ui.h>
-#include <app/lib/ui/fonts/notoserif_14.h>
-#include <app/lib/ui/logo/zereaderlogomarx.h>
+#include <lib/epub/epub.h>
+#include <lib/ui/ui.h>
+#include <lib/ui/fonts/notoserif_14.h>
+#include <lib/ui/logo/zereaderlogomarx.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ui, CONFIG_ZEREADER_LOG_LEVEL);

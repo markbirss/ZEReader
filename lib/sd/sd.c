@@ -14,7 +14,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
 
-#include <app/lib/sd/sd.h>
+#include <lib/sd/sd.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sd_utils, CONFIG_ZEREADER_LOG_LEVEL);
