@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
+#include <app/lib/epub/epub.h>
+#include <app/lib/ui/ui.h>
+#include <app/lib/ui/fonts/notoserif_14.h>
+#include <app/lib/ui/logo/zereaderlogomarx.h>
+
 #include <zephyr/logging/log.h>
-
-#include "ui.h"
-#include "../epub/epub.h"
-
 LOG_MODULE_REGISTER(ui, CONFIG_ZEREADER_LOG_LEVEL);
+
 LV_FONT_DECLARE(notoserif_14);
 
 const struct device *display_dev;

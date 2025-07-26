@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Anna-Lena Marx
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:

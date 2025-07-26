@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Anna-Lena Marx
+#
+# SPDX-License-Identifier: CC0-1.0
+
 [submodule "doc/doxygen-awesome-css"]
 	path = doc/doxygen-awesome-css
 	url = https://github.com/jothepro/doxygen-awesome-css.git
