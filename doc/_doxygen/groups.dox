@@ -1,0 +1,26 @@
+/**
+ * @defgroup sd SD-Card library
+ * @{
+ *
+ * @brief SD-Card library
+ *
+ * @}
+ */
+
+/**
+ * @defgroup epub EPUB library
+ * @{
+ *
+ * @brief EPUB library
+ *
+ * @}
+ */
+
+ /**
+ * @defgroup ui UI library
+ * @{
+ *
+ * @brief UI library
+ *
+ * @}
+ */

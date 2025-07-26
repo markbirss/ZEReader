@@ -2,20 +2,20 @@
 ..
 .. SPDX-License-Identifier: MPL-2.0
 
-Overview
-========
+Welcome to the ZEReader documentation!
+===============================================
 
-About the Project
-=================
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents
 
+   docs/zephyr
+   docs/about
+   docs/getting-started
+   docs/debugging
 
-Supported Features
+Indices and tables
 ==================
 
-
-Planned Options
-===============
-
-
-Build the Firmware
-==================
+* :ref:`genindex`
+* :ref:`search`
