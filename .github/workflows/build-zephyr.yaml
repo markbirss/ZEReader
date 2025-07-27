@@ -21,15 +21,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: workspace/ZEReader
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
 
       - name: Setup Zephyr
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: app
+          base-path: workspace
+          app-path: ZEReader
           toolchains: arm-zephyr-eabi
-          manifest-file-name: ../west.yml
 
       - name: Build Firmware
+        working-directory: workspace/ZEReader
+        shell: bash
         run: |
           west build -b rpi_pico2/rp2350a/m33 app -p always
 
@@ -37,5 +46,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ZEReader-Firmware
-          path: build/zephyr/zephyr.uf2
+          path: ZEReader/build/zephyr/zephyr.uf2
  
