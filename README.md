@@ -16,6 +16,7 @@ SPDX-License-Identifier: MPL-2.0
   <img alt="API Documentation" src="https://img.shields.io/badge/API-documentation-3D578C?logo=c&logoColor=white">
 </a>
 
+
 ZEReader is a Zephyr based firmware for an open hardware eBook reader approach.
 See https://github.com/Allegra42/ZEReader-KiCad for more information about the hardware design.
 
@@ -100,14 +101,10 @@ The firmware shows a proof-of-concept that reading EPUBs as they are is possible
 (Right now, without unzipping the EPUB files directly from Zephyr.)
 
 The firmware supports showing the contents of a book in correct order while jumping over pictures and leave (X)HTML formatting untouched.
-Stepping forward is fine, stepping backwards still has some issues on chapter(file) borders.
 
-The UI implementation is currently barely existing.
+The UI implementation is still very basic.
 The display orientation is still landscape and refresh configurations need to be tuned for an actually usable reading experience.
-
-The epub and ui related code should be built as a Zephyr module. Due to issues with including the filesystem header ff.h, both are currently a part of the app while the needed directory structure and CMake files are kept for reference and faster moving. Building these parts as Zephyr modules would improve testing with Twister and e.g. switching out the UI implementation.
 
 Config options for EPUB handling are still part of epub.h and should move to an own KConfig definition as the project proceeds in order to keep these configurations in a central location adopt Zephyr idioms.
 
-For optimization, epub handling is currently heavily stack based with predefined sizes.
-Trying to open en EPUB with e.g. a larger title/pathname as configured will fail.
+See the GitHub issue page for a closer look on planned tasks.
