@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include "sd.h"
-
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -16,12 +14,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
 
+#include <lib/sd/sd.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sd_utils, CONFIG_ZEREADER_LOG_LEVEL);
 
 static FATFS fat_fs;
-static const char *sd_mountpoint = "/SD:";
-static const char *sd_rootpath = "/SD:/";
 
 static struct fs_mount_t mount_point = {
     .type = FS_FATFS,

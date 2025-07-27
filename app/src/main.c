@@ -11,8 +11,8 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/kernel.h>
 
-#include "epub/epub.h"
-#include "ui/ui.h"
+#include <lib/epub/epub.h>
+#include <lib/ui/ui.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_ZEREADER_LOG_LEVEL);
 

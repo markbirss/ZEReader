@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Anna-Lena Marx <mail@marx.engineer>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+/**
+ * @defgroup sd SD-Card library
+ * @{
+ *
+ * @brief SD-Card library
+ *
+ * @}
+ */
+
+/**
+ * @defgroup epub EPUB library
+ * @{
+ *
+ * @brief EPUB library
+ *
+ * @}
+ */
+
+ /**
+ * @defgroup ui UI library
+ * @{
+ *
+ * @brief UI library
+ *
+ * @}
+ */

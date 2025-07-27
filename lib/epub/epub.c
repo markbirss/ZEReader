@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "sd.h"
-#include "epub.h"
+#include <lib/epub/epub.h>
+#include <lib/sd/sd.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(epub, CONFIG_ZEREADER_LOG_LEVEL);

@@ -17,3 +17,5 @@ __pycache__
 /nrfxlib
 /test
 /.vscode/
+/doc/_build_doxygen
+/doc/_build_sphinx
