@@ -46,5 +46,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ZEReader-Firmware
-          path: ZEReader/build/zephyr/zephyr.uf2
+          path: workspace/ZEReader/build/zephyr/zephyr.uf2
  

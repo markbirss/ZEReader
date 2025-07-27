@@ -30,7 +30,7 @@ west init -m git@github.com:Allegra42/ZEReader.git zereader-workspace
 cd zereader-workspace
 
 west update
-pip install -r zephyr/scripts/requirements.txt
+pip install -r zephyr-rtos/scripts/requirements.txt
 cd zephyr-rtos
 west sdk install
 ```
