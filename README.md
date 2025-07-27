@@ -5,6 +5,17 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 # ZEReader
+
+[![Build Zephyr ZEReader Application](https://github.com/Allegra42/ZEReader/actions/workflows/build-zephyr.yaml/badge.svg)](https://github.com/Allegra42/ZEReader/actions/workflows/build-zephyr.yaml)
+[![Build ZEReader documentation](https://github.com/Allegra42/ZEReader/actions/workflows/build-docs.yaml/badge.svg)](https://github.com/Allegra42/ZEReader/actions/workflows/build-docs.yaml)
+
+<a href="https://allegra42.github.io/ZEReader/">
+  <img alt="Documentation" src="https://img.shields.io/badge/documentation-3D578C?logo=sphinx&logoColor=white">
+</a>
+<a href="https://allegra42.github.io/ZEReader/doxygen">
+  <img alt="API Documentation" src="https://img.shields.io/badge/API-documentation-3D578C?logo=c&logoColor=white">
+</a>
+
 ZEReader is a Zephyr based firmware for an open hardware eBook reader approach.
 See https://github.com/Allegra42/ZEReader-KiCad for more information about the hardware design.
 
