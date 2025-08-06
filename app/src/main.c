@@ -53,7 +53,7 @@ int main(void)
 
 
 	// Testing
-	epub_open_book(epub_get_book_entry(1));
+	//epub_open_book(epub_get_book_entry(1));
 
 
 	lv_timer_handler();
