@@ -239,8 +239,7 @@ void zereader_setup_page()
 	lv_obj_set_y(text_area, 20);
 	lv_obj_set_width(text_area, 628);
 	//lv_obj_set_width(text_area, 780);
-	lv_obj_set_height(text_area, 410);
-	//lv_obj_set_height(text_area, 440);
+	lv_obj_set_height(text_area, 440);
 
 	page_ctr = 0;
 }
